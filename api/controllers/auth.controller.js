@@ -26,7 +26,7 @@ export const signin = async (req, res, next) => {
     const validPassword = bcryptjs.compareSync(password, validEmail.password);
     if (!validPassword) return next(errorHandler(401, "Wrong credentials!"));
     const token = jwt.sign({ id: validEmail._id }, process.env.JWT_SECRET);
-    const { password: pass, ...rest } = validEmail._doc;
+    const { password: pass, ...rest } = validEmail._doc; // pass和rest都只是新的变量名
     res
       .cookie("access_token", token, {
         httpOnly: true,
