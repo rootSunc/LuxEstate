@@ -17,8 +17,8 @@ export default function SignUp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     try {
+      setLoading(true);
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: {
@@ -26,23 +26,19 @@ export default function SignUp() {
         },
         body: JSON.stringify(formData),
       });
-
-      // check if the response has content
-      if (res.headers.get("content-length") === "0" || !res.ok) {
-        throw new Error("No response payload or bad response");
-      }
       const data = await res.json();
+      console.log(data);
       if (data.success === false) {
+        setLoading(false);
         setError(data.message);
-      } else {
-        console.log(data);
+        return;
       }
+      setLoading(false);
+      setError(null);
       navigate("/sign-in");
     } catch (error) {
-      setError(error.message);
-      console.error("Error during signup: ", error);
-    } finally {
       setLoading(false);
+      setError(error.message);
     }
   };
 
