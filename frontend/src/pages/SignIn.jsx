@@ -42,6 +42,7 @@ export default function SignIn() {
         // setLoading(false);
         // setError(data.message);
         dispatch(signInFailure(data.message));
+        dispatch(signInFailure(null)); // 重置错误状态，使得注册完成后跳转至登录页面不返回错误
         return;
       }
       // setLoading(false);
