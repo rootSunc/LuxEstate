@@ -136,7 +136,7 @@ export default function CreateListing() {
           userRef: currentUser._id,
         }),
       });
-      const data = res.json();
+      const data = await res.json();
       setLoading(false);
       if (data.success == false) {
         // 后端next中间件中设置了出现错误时，success属性为false

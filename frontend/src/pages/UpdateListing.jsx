@@ -151,12 +151,14 @@ export default function CreateListing() {
           userRef: currentUser._id,
         }),
       });
-      const data = res.json();
+      const data = await res.json(); // 必须设置成异步，否则data可能还处于promise pending状态，数据未完成解析
       setLoading(false);
       if (data.success == false) {
         // 后端next中间件中设置了出现错误时，success属性为false
         setError(data.message);
       }
+      console.log(data);
+      console.log(data._id);
       navigate(`/listing/${data._id}`);
     } catch (error) {
       setError(error.message);
