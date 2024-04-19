@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import SwiperCore from "swiper";
 import { Navigation } from "swiper/modules";
+import { useSelector } from "react-redux";
 import "swiper/css/bundle";
 import {
   FaBath,
@@ -12,6 +13,7 @@ import {
   FaParking,
   FaShare,
 } from "react-icons/fa";
+import Contact from "../componets/Contact";
 
 export default function Listing() {
   SwiperCore.use([Navigation]);
@@ -19,7 +21,9 @@ export default function Listing() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [contact, setContact] = useState(false);
   const params = useParams();
+  const { currentUser } = useSelector((state) => state.user);
   // useEffect 钩子函数不应该直接使用异步函数，因为如果你这么做，它会返回一个 Promise，而不是清理函数或者 undefined。React期望 useEffect 的返回值是一个函数（用于清理），或者是 undefined。因此，当你将异步函数直接作为 useEffect 的执行函数时，会出现警告。(  useEffect(async () => {})
   useEffect(() => {
     async function fetchData() {
@@ -42,7 +46,7 @@ export default function Listing() {
     }
     fetchData();
   }, [params.listingId]); // 依赖数组中包含 `params.listingId`，确保当ID变化时重新获取数据
-  console.log(loading);
+
   return (
     <main>
       {loading && <p className="text-center my-7 text-2xl">Loading</p>}
@@ -132,6 +136,13 @@ export default function Listing() {
                 {listing.furnished ? "Furnished" : "Unfurnished"}
               </li>
             </ul>
+            {/* 通过Contact控制button,点击后重新设置contact = true，button不可见 */}
+            {currentUser && listing.userRef !== currentUser._id && !contact && (
+              <button onClick={() => setContact(true)} className="bg-slate-700 text-white rounded-lg uppercase p-3 hover:opacity-90">
+                Contact Landlord
+              </button>
+            )}
+            {contact && <Contact listing={listing} />}
           </div>
         </>
       )}
