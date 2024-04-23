@@ -5,6 +5,7 @@ import SignUp from "./pages/SignUp";
 import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Listing from "./pages/Listing";
+import Search from "./pages/Search";
 import Header from "./componets/Header";
 import PrivateRoute from "./componets/PrivateRoute";
 import CreateListing from "./pages/CreateListing";
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/sign-in" element={<Signin />} />
           <Route path="/sign-up" element={<SignUp />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/listing/:listingId" element={<Listing />} />
 
           <Route element={<PrivateRoute />}>
