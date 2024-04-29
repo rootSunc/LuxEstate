@@ -63,7 +63,7 @@ export default function Home() {
           to={"/search"}
           className="text-xs sm:text-sm text-blue-800 font-bold hover:underline"
         >
-          xw Let's get start...
+          Let's get start...
         </Link>
       </div>
 
