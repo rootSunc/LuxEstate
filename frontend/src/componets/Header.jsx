@@ -8,7 +8,7 @@ export default function Header() {
   const [searchTerm, setSearchTerm] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
-  const handleSumit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const urlParams = new URLSearchParams(location.search);
     urlParams.set("searchTerm", searchTerm);
@@ -19,9 +19,7 @@ export default function Header() {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const searchTermFromUrl = urlParams.get("searchTerm");
-    if (searchTermFromUrl) {
-      setSearchTerm(searchTermFromUrl);
-    }
+    setSearchTerm(searchTermFromUrl || "");
   }, [location.search]);
   return (
     <header className="bg-slate-200 shadow-sm">
@@ -34,7 +32,7 @@ export default function Header() {
         </Link>
 
         <form
-          onSubmit={handleSumit}
+          onSubmit={handleSubmit}
           className="bg-slate-100 p-3 rounded-lg flex items-center"
         >
           <input
@@ -59,17 +57,21 @@ export default function Header() {
             <Link to="/about">About</Link>
           </li>
 
-          <Link to="/profile">
+          <li>
             {currentUser ? (
-              <img
-                className="rounded-full h-7 w-7 object-cover"
-                src={currentUser.avatar}
-                alt="profile"
-              />
+              <Link to="/profile">
+                <img
+                  className="rounded-full h-7 w-7 object-cover"
+                  src={currentUser.avatar}
+                  alt="profile"
+                />
+              </Link>
             ) : (
-              <li className=" text-slate-700 hover:underline">Sign in</li>
+              <Link to="/sign-in" className="text-slate-700 hover:underline">
+                Sign in
+              </Link>
             )}
-          </Link>
+          </li>
         </ul>
       </div>
     </header>
