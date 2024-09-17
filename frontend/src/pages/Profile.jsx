@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   updateUserStart,
   updateUserSuccess,
@@ -99,7 +99,9 @@ export default function Profile() {
     }
   };
 
-  const handleShowListings = async () => {
+  const handleShowListings = useCallback(async () => {
+    if (!currentUser?._id) return;
+
     try {
       setShowListingsError(false);
       setListingsLoading(true);
@@ -110,7 +112,7 @@ export default function Profile() {
     } finally {
       setListingsLoading(false);
     }
-  };
+  }, [currentUser?._id]);
 
   const handleListingDelete = async (listingId) => {
     try {
@@ -129,7 +131,7 @@ export default function Profile() {
     if (currentUser?._id) {
       handleShowListings();
     }
-  }, [currentUser?._id]);
+  }, [currentUser?._id, handleShowListings]);
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
@@ -196,6 +198,7 @@ export default function Profile() {
           placeholder="password"
           id="password"
           className="p-3 border rounded-lg"
+          onChange={handleChange}
         />
         <button className="bg-slate-700 text-white p-3 border rounded-lg uppercase hover:opacity-95 disabled:opacity-80">
           {loading ? "Loading..." : "Update"}

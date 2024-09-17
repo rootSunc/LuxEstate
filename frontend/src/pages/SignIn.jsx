@@ -72,7 +72,7 @@ export default function SignIn() {
         <OAuth />
       </form>
       <div className="flex gap-3 mt-3">
-        <p>Don't have an account?</p>
+        <p>Need an account?</p>
         <Link to="/sign-up">
           <span className="text-blue-700">Sign Up</span>
         </Link>
