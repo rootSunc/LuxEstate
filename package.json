@@ -8,6 +8,7 @@
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
     "build": "npm run build --prefix frontend",
+    "test": "vitest run",
     "db:init": "node api/scripts/init-db.js",
     "db:reset": "node api/scripts/init-db.js --reset"
   },
@@ -23,6 +24,7 @@
     "mongoose": "^8.24.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "vitest": "^4.1.6"
   }
 }

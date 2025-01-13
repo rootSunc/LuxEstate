@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { FaArrowRight, FaBuilding, FaHome, FaKey, FaMapMarkerAlt, FaSearch } from "react-icons/fa";
-import ListingItem from "../componets/ListingItem";
+import ListingItem from "../components/ListingItem";
 import { apiRequest } from "../utils/api";
 
 const HERO_FALLBACK_IMAGE =
@@ -29,9 +29,9 @@ export default function Home() {
         setLoading(true);
         setLoadingError("");
         const [offers, rents, sales] = await Promise.all([
-          apiRequest("/api/listing/get?offer=true&limit=4"),
-          apiRequest("/api/listing/get?type=rent&limit=4"),
-          apiRequest("/api/listing/get?type=sale&limit=4"),
+          apiRequest("/api/listings?offer=true&limit=4"),
+          apiRequest("/api/listings?type=rent&limit=4"),
+          apiRequest("/api/listings?type=sale&limit=4"),
         ]);
         setOfferListings(Array.isArray(offers) ? offers : []);
         setRentListings(Array.isArray(rents) ? rents : []);
@@ -74,7 +74,7 @@ export default function Home() {
     try {
       setCreatingDemo(true);
       setDemoError("");
-      const sample = await apiRequest("/api/listing/create", {
+      const sample = await apiRequest("/api/listings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

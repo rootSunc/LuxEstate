@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import userRoute from "./routes/user.route.js";
 import authRoute from "./routes/auth.route.js";
 import listingRouter from "./routes/listing.route.js";
+import inquiryRoute from "./routes/inquiry.route.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { errorHandler } from "./utils/error.js";
@@ -76,6 +77,8 @@ if (!process.env.VERCEL) {
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/listing", listingRouter);
+app.use("/api/listings", listingRouter);
+app.use("/api/inquiries", inquiryRoute);
 app.use("/uploads", express.static(uploadDir, { maxAge: "1d" }));
 app.get("/api/health", (req, res) => res.status(200).json({ ok: true }));
 app.use("/api", (req, res, next) => {

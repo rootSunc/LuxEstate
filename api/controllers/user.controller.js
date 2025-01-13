@@ -1,4 +1,5 @@
 import Listing from "../models/listing.model.js";
+import Inquiry from "../models/inquiry.model.js";
 import User from "../models/user.model.js";
 import { errorHandler } from "../utils/error.js";
 import bcrypt from "bcryptjs";
@@ -79,6 +80,9 @@ export const deleteUser = async (req, res, next) => {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
     if (!deletedUser) return next(errorHandler(404, "User not found"));
     await Listing.deleteMany({ userRef: req.params.id });
+    await Inquiry.deleteMany({
+      $or: [{ ownerRef: req.params.id }, { senderRef: req.params.id }],
+    });
 
     return res
       .clearCookie(ACCESS_TOKEN_COOKIE, getAccessTokenCookieOptions())

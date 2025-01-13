@@ -25,7 +25,7 @@ export const uploadImageFile = async (file) => {
     throw new Error(validationError);
   }
 
-  const data = await apiRequest("/api/listing/upload", {
+  const data = await apiRequest("/api/listings/upload", {
     method: "POST",
     headers: {
       "Content-Type": file.type,

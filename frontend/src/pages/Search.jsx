@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { FaFilter, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
-import ListingItem from "../componets/ListingItem.jsx";
+import ListingItem from "../components/ListingItem.jsx";
 import { apiRequest } from "../utils/api";
 
 const DEFAULT_FILTERS = {
@@ -52,7 +52,7 @@ export default function Search() {
         setShowMore(false);
         setFetchError("");
         const searchQuery = urlParams.toString();
-        const data = await apiRequest(`/api/listing/get?${searchQuery}`);
+        const data = await apiRequest(`/api/listings?${searchQuery}`);
         const parsedListings = Array.isArray(data) ? data : [];
         setShowMore(parsedListings.length > 8);
         setListings(parsedListings);
@@ -111,7 +111,7 @@ export default function Search() {
       const numberOfListings = listings.length;
       const urlParams = new URLSearchParams(location.search);
       urlParams.set("startIndex", String(numberOfListings));
-      const data = await apiRequest(`/api/listing/get?${urlParams.toString()}`);
+      const data = await apiRequest(`/api/listings?${urlParams.toString()}`);
       const parsedListings = Array.isArray(data) ? data : [];
       setShowMore(parsedListings.length >= 9);
       setListings((prev) => [...prev, ...parsedListings]);
