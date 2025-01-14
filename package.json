@@ -7,8 +7,11 @@
   "scripts": {
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "lint:frontend": "npm run lint --prefix frontend",
     "build": "npm run build --prefix frontend",
     "test": "vitest run",
+    "verify": "npm audit --audit-level=moderate && npm test && npm audit --audit-level=moderate --prefix frontend && npm run lint --prefix frontend && npm run build --prefix frontend",
     "db:init": "node api/scripts/init-db.js",
     "db:reset": "node api/scripts/init-db.js --reset"
   },

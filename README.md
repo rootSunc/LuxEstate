@@ -1,125 +1,132 @@
 # LuxEstate
 
-LuxEstate is a full-stack real estate web application built with:
+LuxEstate is a full-stack real estate marketplace demo built to show production-minded CRUD, authentication, search, image upload, and owner inquiry workflows.
+
+## Stack
+
 - Backend: Node.js, Express, MongoDB, Mongoose
-- Frontend: React, Vite, Redux Toolkit
+- Frontend: React, Vite, Redux Toolkit, Tailwind CSS
+- Auth: HTTP-only JWT session cookies, email/password, Firebase Google sign-in verification
+- Quality: Vitest unit tests, ESLint, npm audit, GitHub Actions CI
 
-## Features
+## Product Capabilities
 
-- User authentication (email/password and Google OAuth)
-- Listing creation, update, and deletion
-- Listing search and filtering
-- Profile management
-- Image upload through backend API (`/api/listing/upload`)
+- Browse rent and sale listings from a search-first homepage.
+- Filter listings by type, offer, parking, furnished state, and sort order.
+- Create and update listings with validated fields and up to 6 images.
+- Upload images through the API with MIME and file signature validation.
+- View listing detail pages with gallery thumbnails, facts, map embed, share action, and owner contact.
+- Send and manage owner inquiries from the profile dashboard.
+- Seed demo users and listings for repeatable walkthroughs.
 
-## Requirements
-
-- Node.js 18+
-- npm 9+
-- MongoDB connection string
-
-## Environment Variables
-
-Create a `.env` file in the project root:
+## Quick Start
 
 ```bash
-MONGO=mongodb+srv://<user>:<password>@<cluster>/<database>
-JWT_SECRET=replace_with_a_strong_secret
-FIREBASE_PROJECT_ID=lux-estate-5643b
-PORT=3000
-PUBLIC_BASE_URL=http://localhost:3000
-SEED_USER_PASSWORD=ChangeMe123!
-```
-
-Notes:
-- `MONGO` and `JWT_SECRET` are required.
-- `FIREBASE_PROJECT_ID` is required for Google OAuth because the API verifies
-  Firebase ID tokens before creating a LuxEstate session.
-- `PUBLIC_BASE_URL` is optional but recommended for stable image URLs.
-- `SEED_USER_PASSWORD` is optional and used by the database seed script.
-
-## Install Dependencies
-
-```bash
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+docker compose up -d
 npm install
 npm install --prefix frontend
-```
-
-## Run in Development
-
-Backend:
-
-```bash
-npm run dev
-```
-
-Frontend:
-
-```bash
-npm run dev --prefix frontend
-```
-
-Frontend default URL: `http://localhost:5173`
-
-## Database Initialization
-
-Seed baseline users and listings:
-
-```bash
-npm run db:init
-```
-
-Reset existing seed users/listings and re-seed:
-
-```bash
 npm run db:reset
 ```
 
-Seed users:
+Run the API and frontend in separate terminals:
+
+```bash
+npm run dev
+npm run dev:frontend
+```
+
+Frontend: `http://localhost:5173`
+
+API health check: `http://localhost:3000/api/health`
+
+## Environment
+
+Root `.env`:
+
+```bash
+MONGO=mongodb://localhost:27017/luxestate
+JWT_SECRET=replace_with_a_strong_secret_at_least_32_chars
+FIREBASE_PROJECT_ID=lux-estate-5643b
+PORT=3000
+PUBLIC_BASE_URL=http://localhost:3000
+UPLOAD_DIR=uploads
+SEED_USER_PASSWORD=ChangeMe123!
+```
+
+Frontend `.env`:
+
+```bash
+VITE_FIREBASE_API_KEY=replace_with_firebase_web_api_key
+```
+
+`MONGO` and `JWT_SECRET` are required for the API. `FIREBASE_PROJECT_ID` is required for Google OAuth because the API verifies Firebase ID tokens before creating a LuxEstate session.
+
+## Demo Users
+
+After `npm run db:reset`, use the configured `SEED_USER_PASSWORD` for:
+
 - `owner1@luxestate.local`
 - `owner2@luxestate.local`
 - `demo@luxestate.local`
 
-Password for seeded users:
-- Value of `SEED_USER_PASSWORD`
-- If not set, defaults to `ChangeMe123!`
-
-## Build Frontend
+## Scripts
 
 ```bash
-npm run build
+npm run dev            # API server
+npm run dev:frontend   # Vite frontend
+npm run db:init        # Upsert seed users/listings
+npm run db:reset       # Reset seed users/listings
+npm test               # Vitest contract/unit tests
+npm run verify         # audit + tests + frontend lint/build
+npm run build          # frontend production build
 ```
 
-## API Health Check
+## API Surface
 
-```bash
-GET /api/health
-```
-
-## Important Routes
+Auth:
 
 - `POST /api/auth/signup`
 - `POST /api/auth/signin`
+- `POST /api/auth/google`
 - `POST /api/auth/signout`
 - `GET /api/auth/me`
-- `GET /api/listing/get`
-- `POST /api/listing/create`
-- `PATCH /api/listing/update/:id`
-- `DELETE /api/listing/delete/:id`
-- `POST /api/listing/upload`
 
-## Image Upload Constraints
+Listings:
 
-- Allowed MIME types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`
-- Max file size: `5MB`
-- Uploaded files are served from `/uploads`
+- `GET /api/listings`
+- `GET /api/listings/:id`
+- `POST /api/listings`
+- `PATCH /api/listings/:id`
+- `DELETE /api/listings/:id`
+- `POST /api/listings/upload`
 
-## Troubleshooting
+Inquiries:
 
-If backend startup fails with:
+- `POST /api/inquiries`
+- `GET /api/inquiries/mine`
+- `PATCH /api/inquiries/:id/read`
 
-```text
-MONGO and JWT_SECRET must be configured
+Legacy `/api/listing/*` routes remain mounted for backwards compatibility.
+
+## Quality Gate
+
+Local and CI verification run:
+
+```bash
+npm audit --audit-level=moderate
+npm test
+npm audit --audit-level=moderate --prefix frontend
+npm run lint --prefix frontend
+npm run build --prefix frontend
 ```
 
-set `MONGO` and `JWT_SECRET` in `.env` and restart the backend process.
+## Architecture And Demo
+
+- [Architecture notes](docs/architecture.md)
+- [Demo script](docs/demo-script.md)
+
+## Deployment Notes
+
+The current upload implementation stores files in `UPLOAD_DIR` and serves them from `/uploads`. This is suitable for local demos and single-node deployments. For serverless production, move image storage to S3, R2, or Cloudinary and store only public asset URLs in MongoDB.
