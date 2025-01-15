@@ -1,23 +1,107 @@
-# LuxEstate
+<div align="center">
+  <h1>LuxEstate</h1>
+  <p>
+    A production-minded real estate marketplace demo for browsing homes,
+    publishing listings, managing owner inquiries, and validating full-stack
+    product workflows.
+  </p>
 
-LuxEstate is a full-stack real estate marketplace demo built to show production-minded CRUD, authentication, search, image upload, and owner inquiry workflows.
+  <p>
+    <img alt="Node.js" src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=node.js&logoColor=white">
+    <img alt="Express" src="https://img.shields.io/badge/Express-API-000000?style=for-the-badge&logo=express&logoColor=white">
+    <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=for-the-badge&logo=mongodb&logoColor=white">
+    <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=111827">
+    <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white">
+    <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white">
+    <img alt="License" src="https://img.shields.io/badge/license-ISC-blue?style=for-the-badge">
+  </p>
+</div>
 
-## Stack
+![LuxEstate home experience](docs/assets/screenshots/home.jpg)
 
-- Backend: Node.js, Express, MongoDB, Mongoose
-- Frontend: React, Vite, Redux Toolkit, Tailwind CSS
-- Auth: HTTP-only JWT session cookies, email/password, Firebase Google sign-in verification
-- Quality: Vitest unit tests, ESLint, npm audit, GitHub Actions CI
+## Overview
 
-## Product Capabilities
+LuxEstate is a full-stack marketplace built around the real workflows a property
+platform needs: searchable listing discovery, authenticated publishing, safe
+image uploads, owner dashboards, and inquiry management. The codebase is kept
+small enough for portfolio review, but it includes the operational touches that
+make a demo feel closer to a real product.
 
-- Browse rent and sale listings from a search-first homepage.
-- Filter listings by type, offer, parking, furnished state, and sort order.
-- Create and update listings with validated fields and up to 6 images.
-- Upload images through the API with MIME and file signature validation.
-- View listing detail pages with gallery thumbnails, facts, map embed, share action, and owner contact.
-- Send and manage owner inquiries from the profile dashboard.
-- Seed demo users and listings for repeatable walkthroughs.
+## Product Highlights
+
+| Area | What it covers |
+| --- | --- |
+| Search-first discovery | Homepage search, listing filters, sort order, offer chips, empty states, and paginated show-more behavior. |
+| Listing operations | Create, update, delete, and view property listings with validated pricing, amenities, gallery images, map links, and owner-only edit controls. |
+| Authenticated sessions | Email/password auth with HTTP-only JWT cookies plus Firebase Google sign-in token verification. |
+| Owner workflow | Profile dashboard with owned listings, account management, and inquiry inbox states. |
+| Upload safety | API image upload path checks MIME type, binary signature, size limits, and persists uploaded files under `/uploads`. |
+| Quality gate | Vitest contracts, frontend lint/build, npm audit, and GitHub Actions CI workflow. |
+
+## Frontend Preview
+
+| Marketplace search | Listing detail |
+| --- | --- |
+| ![LuxEstate search filters](docs/assets/screenshots/search.jpg) | ![LuxEstate listing detail](docs/assets/screenshots/listing-detail.jpg) |
+
+| Owner dashboard | Listing creation |
+| --- | --- |
+| ![LuxEstate owner profile](docs/assets/screenshots/profile.jpg) | ![LuxEstate create listing](docs/assets/screenshots/create-listing.jpg) |
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Visitor["Buyer / renter browser"] --> Frontend["React + Vite frontend"]
+  Frontend --> Router["React Router pages"]
+  Frontend --> Store["Redux Toolkit + redux-persist"]
+  Frontend --> ApiClient["API helper with credentials included"]
+
+  ApiClient --> Express["Express API"]
+  Express --> Auth["Auth controllers"]
+  Express --> ListingFlow["Listing + inquiry controllers"]
+  Express --> UploadFlow["Upload endpoint"]
+
+  Auth --> Cookie["HTTP-only JWT session cookie"]
+  Auth --> Firebase["Firebase Google token verification"]
+  ListingFlow --> Validators["Payload validators"]
+  UploadFlow --> FileChecks["MIME, signature, and size checks"]
+
+  Express --> Mongo[(MongoDB via Mongoose)]
+  UploadFlow --> Uploads[(Local uploads directory)]
+  Express --> Static["Static frontend build + /uploads"]
+```
+
+## Tech Stack
+
+| Layer | Tools |
+| --- | --- |
+| Frontend | React 18, Vite 8, React Router, Redux Toolkit, redux-persist, Tailwind CSS, React Icons |
+| Backend | Node.js, Express, MongoDB, Mongoose, cookie-parser, jsonwebtoken, bcryptjs |
+| Auth | Email/password sessions, HTTP-only JWT cookies, Firebase ID token verification for Google sign-in |
+| Quality | Vitest, ESLint, npm audit, GitHub Actions |
+| Local services | Docker Compose MongoDB service, local upload directory |
+
+## Project Anatomy
+
+```text
+.
+|-- api/
+|   |-- controllers/      # Request orchestration and authorization
+|   |-- models/           # Mongoose schemas
+|   |-- routes/           # Express route modules
+|   |-- scripts/          # Seed/reset helpers
+|   |-- utils/            # Auth, Firebase, and error helpers
+|   `-- validators/       # Listing and image validation contracts
+|-- frontend/
+|   |-- src/components/   # Shared UI surfaces
+|   |-- src/pages/        # Route-level screens
+|   |-- src/redux/        # User session state
+|   `-- src/utils/        # API, upload, and formatting helpers
+|-- docs/                 # Architecture notes, demo script, screenshots
+|-- uploads/              # Local development uploads
+`-- .github/workflows/    # CI verification
+```
 
 ## Quick Start
 
@@ -37,9 +121,10 @@ npm run dev
 npm run dev:frontend
 ```
 
-Frontend: `http://localhost:5173`
-
-API health check: `http://localhost:3000/api/health`
+| Service | URL |
+| --- | --- |
+| Frontend | `http://localhost:5173` |
+| API health check | `http://localhost:3000/api/health` |
 
 ## Environment
 
@@ -61,15 +146,19 @@ Frontend `.env`:
 VITE_FIREBASE_API_KEY=replace_with_firebase_web_api_key
 ```
 
-`MONGO` and `JWT_SECRET` are required for the API. `FIREBASE_PROJECT_ID` is required for Google OAuth because the API verifies Firebase ID tokens before creating a LuxEstate session.
+`MONGO` and `JWT_SECRET` are required for the API. `FIREBASE_PROJECT_ID`
+is required for Google OAuth because the API verifies Firebase ID tokens before
+creating a LuxEstate session.
 
-## Demo Users
+## Demo Accounts
 
-After `npm run db:reset`, use the configured `SEED_USER_PASSWORD` for:
+After `npm run db:reset`, sign in with the configured `SEED_USER_PASSWORD`.
 
-- `owner1@luxestate.local`
-- `owner2@luxestate.local`
-- `demo@luxestate.local`
+| Role | Email |
+| --- | --- |
+| Owner | `owner1@luxestate.local` |
+| Owner | `owner2@luxestate.local` |
+| Demo user | `demo@luxestate.local` |
 
 ## Scripts
 
@@ -79,13 +168,14 @@ npm run dev:frontend   # Vite frontend
 npm run db:init        # Upsert seed users/listings
 npm run db:reset       # Reset seed users/listings
 npm test               # Vitest contract/unit tests
-npm run verify         # audit + tests + frontend lint/build
-npm run build          # frontend production build
+npm run verify         # Audit + tests + frontend lint/build
+npm run build          # Frontend production build
 ```
 
 ## API Surface
 
-Auth:
+<details>
+<summary>Authentication</summary>
 
 - `POST /api/auth/signup`
 - `POST /api/auth/signin`
@@ -93,7 +183,10 @@ Auth:
 - `POST /api/auth/signout`
 - `GET /api/auth/me`
 
-Listings:
+</details>
+
+<details>
+<summary>Listings</summary>
 
 - `GET /api/listings`
 - `GET /api/listings/:id`
@@ -102,17 +195,22 @@ Listings:
 - `DELETE /api/listings/:id`
 - `POST /api/listings/upload`
 
-Inquiries:
+Legacy `/api/listing/*` routes remain mounted for backwards compatibility.
+
+</details>
+
+<details>
+<summary>Inquiries</summary>
 
 - `POST /api/inquiries`
 - `GET /api/inquiries/mine`
 - `PATCH /api/inquiries/:id/read`
 
-Legacy `/api/listing/*` routes remain mounted for backwards compatibility.
+</details>
 
 ## Quality Gate
 
-Local and CI verification run:
+Local verification and CI run the same core checks:
 
 ```bash
 npm audit --audit-level=moderate
@@ -122,11 +220,18 @@ npm run lint --prefix frontend
 npm run build --prefix frontend
 ```
 
-## Architecture And Demo
+## Documentation
 
 - [Architecture notes](docs/architecture.md)
-- [Demo script](docs/demo-script.md)
+- [Demo walkthrough script](docs/demo-script.md)
 
 ## Deployment Notes
 
-The current upload implementation stores files in `UPLOAD_DIR` and serves them from `/uploads`. This is suitable for local demos and single-node deployments. For serverless production, move image storage to S3, R2, or Cloudinary and store only public asset URLs in MongoDB.
+The current upload implementation stores files in `UPLOAD_DIR` and serves them
+from `/uploads`. This is suitable for local demos and single-node deployments.
+For serverless production, move image storage to S3, R2, or Cloudinary and
+persist only public asset URLs in MongoDB.
+
+## License
+
+LuxEstate is released under the ISC license.
