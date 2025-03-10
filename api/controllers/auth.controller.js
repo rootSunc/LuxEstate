@@ -11,8 +11,13 @@ import { verifyFirebaseIdToken } from "../utils/firebaseAuth.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const signToken = (userId) =>
-  jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1d" });
+const signToken = (userId) => {
+  if (!process.env.JWT_SECRET) {
+    throw errorHandler(500, "Server auth configuration is missing");
+  }
+
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1d" });
+};
 
 export const signup = async (req, res, next) => {
   try {

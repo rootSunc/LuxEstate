@@ -1,5 +1,4 @@
 import express from "express";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
 import userRoute from "./routes/user.route.js";
 import authRoute from "./routes/auth.route.js";
@@ -8,6 +7,11 @@ import inquiryRoute from "./routes/inquiry.route.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { errorHandler } from "./utils/error.js";
+import {
+  connectDatabase,
+  getDatabaseStatus,
+  requireDatabase,
+} from "./utils/database.js";
 
 dotenv.config();
 
@@ -55,18 +59,9 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
-if (!process.env.MONGO || !process.env.JWT_SECRET) {
-  throw new Error("MONGO and JWT_SECRET must be configured");
-}
-
-mongoose
-  .connect(process.env.MONGO)
-  .then(() => {
-    console.log("Connected to MongoDB");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection failed:", err.message);
-  });
+connectDatabase()
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection failed:", err.message));
 
 if (!process.env.VERCEL) {
   app.listen(port, () => {
@@ -74,13 +69,15 @@ if (!process.env.VERCEL) {
   });
 }
 
-app.use("/api/users", userRoute);
-app.use("/api/auth", authRoute);
-app.use("/api/listing", listingRouter);
-app.use("/api/listings", listingRouter);
-app.use("/api/inquiries", inquiryRoute);
 app.use("/uploads", express.static(uploadDir, { maxAge: "1d" }));
-app.get("/api/health", (req, res) => res.status(200).json({ ok: true }));
+app.get("/api/health", (req, res) =>
+  res.status(200).json({ ok: true, database: getDatabaseStatus() })
+);
+app.use("/api/users", requireDatabase, userRoute);
+app.use("/api/auth", requireDatabase, authRoute);
+app.use("/api/listing", requireDatabase, listingRouter);
+app.use("/api/listings", requireDatabase, listingRouter);
+app.use("/api/inquiries", requireDatabase, inquiryRoute);
 app.use("/api", (req, res, next) => {
   next(errorHandler(404, "API route not found"));
 });
