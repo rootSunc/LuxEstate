@@ -12,10 +12,14 @@ export const connectDatabase = async () => {
   }
 
   if (!connectionPromise) {
-    connectionPromise = mongoose.connect(process.env.MONGO).catch((error) => {
-      connectionPromise = undefined;
-      throw error;
-    });
+    connectionPromise = mongoose
+      .connect(process.env.MONGO, {
+        serverSelectionTimeoutMS: 5000,
+      })
+      .catch((error) => {
+        connectionPromise = undefined;
+        throw error;
+      });
   }
 
   await connectionPromise;
@@ -33,5 +37,6 @@ export const requireDatabase = async (req, res, next) => {
 
 export const getDatabaseStatus = () => ({
   configured: Boolean(process.env.MONGO),
+  connected: mongoose.connection.readyState === 1,
   readyState: mongoose.connection.readyState,
 });

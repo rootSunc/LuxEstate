@@ -232,6 +232,12 @@ from `/uploads`. This is suitable for local demos and single-node deployments.
 For serverless production, move image storage to S3, R2, or Cloudinary and
 persist only public asset URLs in MongoDB.
 
+For Vercel deployments, configure `MONGO` with a publicly reachable MongoDB
+Atlas URI, for example `mongodb+srv://<user>:<password>@<cluster-host>/luxestate`.
+Do not use `mongodb://localhost:27017/luxestate` in Vercel. If `/api/health`
+returns `ok: false`, the deployment can reach the API function but cannot connect
+to MongoDB.
+
 ## License
 
 LuxEstate is released under the ISC license.
