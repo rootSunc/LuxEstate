@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { FaCheck, FaCloudUploadAlt, FaHome, FaImage, FaLink, FaTrash } from "react-icons/fa";
 import { uploadImageFile, validateImageFile } from "../utils/imageUpload";
+import {
+  resolveListingImageUrl,
+  setImageFallback,
+} from "../utils/imageUrl";
 
 const DEFAULT_LISTING_FORM = {
   imageUrls: [],
@@ -345,7 +349,12 @@ export default function ListingForm({
                   key={`${url}-${index}`}
                   className="grid grid-cols-[72px_1fr_auto] items-center gap-3 rounded-lg border border-slate-200 p-2"
                 >
-                  <img src={url} alt="Listing preview" className="h-16 w-16 rounded-md object-cover" />
+                  <img
+                    src={resolveListingImageUrl(url)}
+                    alt="Listing preview"
+                    onError={setImageFallback}
+                    className="h-16 w-16 rounded-md object-cover"
+                  />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-800">
                       {index === 0 ? "Cover image" : `Image ${index + 1}`}

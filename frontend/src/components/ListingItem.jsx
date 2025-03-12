@@ -7,9 +7,10 @@ import {
   getListingPriceLabel,
   getListingTypeLabel,
 } from "../utils/listingFormat";
-
-const FALLBACK_IMAGE =
-  "https://53.fs1.hubspotusercontent-na1.net/hub/53/hubfs/Sales_Blog/real-estate-business-compressor.jpg?width=595&height=400&name=real-estate-business-compressor.jpg";
+import {
+  resolveListingImageUrl,
+  setImageFallback,
+} from "../utils/imageUrl";
 
 export default function ListingItem({ listing }) {
   return (
@@ -17,8 +18,9 @@ export default function ListingItem({ listing }) {
       <Link to={`/listing/${listing._id}`} className="block">
         <div className="relative h-[260px] overflow-hidden sm:h-[215px]">
           <img
-            src={listing.imageUrls[0] || FALLBACK_IMAGE}
+            src={resolveListingImageUrl(listing.imageUrls[0])}
             alt={listing.name}
+            onError={setImageFallback}
             className="h-full w-full object-cover transition duration-300 hover:scale-105"
           />
           <div className="absolute left-3 top-3 rounded-md bg-white/95 px-2.5 py-1 text-xs font-semibold text-slate-800">
