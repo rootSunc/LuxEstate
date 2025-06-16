@@ -12,6 +12,7 @@ import {
   getDatabaseStatus,
   requireDatabase,
 } from "./utils/database.js";
+import { createRateLimiter } from "./utils/rateLimit.js";
 
 dotenv.config();
 
@@ -33,29 +34,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const requestStore = new Map();
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const RATE_LIMIT_MAX_REQUESTS = 200;
-app.use((req, res, next) => {
-  const ip = req.ip || req.socket?.remoteAddress || "unknown";
-  const now = Date.now();
-  const windowStart = now - RATE_LIMIT_WINDOW_MS;
-  const recentRequests = (requestStore.get(ip) || []).filter(
-    (timestamp) => timestamp > windowStart
-  );
-
-  if (recentRequests.length >= RATE_LIMIT_MAX_REQUESTS) {
-    return res.status(429).json({
-      success: false,
-      statusCode: 429,
-      message: "Too many requests, please try again later",
-    });
-  }
-
-  recentRequests.push(now);
-  requestStore.set(ip, recentRequests);
-  next();
-});
+app.use(createRateLimiter());
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
@@ -97,7 +76,7 @@ app.get("*", (req, res) => {
 });
 
 // error middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
   return res.status(statusCode).json({
