@@ -7,6 +7,8 @@ export const SORT_FIELDS = new Set([
   "bathrooms",
 ]);
 
+export const LISTING_STATUSES = new Set(["active", "draft", "sold", "rented"]);
+
 export const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
 
 export const ALLOWED_IMAGE_MIME_TYPES = new Map([
@@ -15,6 +17,13 @@ export const ALLOWED_IMAGE_MIME_TYPES = new Map([
   ["image/webp", "webp"],
   ["image/gif", "gif"],
 ]);
+
+const NUMBER_RULES = {
+  bedrooms: { label: "Bedrooms", min: 1, max: 50, integer: true },
+  bathrooms: { label: "Bathrooms", min: 1, max: 50, integer: true },
+  regularPrice: { label: "Regular price", min: 0, max: 100000000 },
+  discountPrice: { label: "Discount price", min: 0, max: 100000000 },
+};
 
 export const detectImageMimeType = (buffer) => {
   if (
@@ -55,6 +64,15 @@ const toNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : NaN;
 };
 
+const isAllowedImageUrl = (value) => {
+  try {
+    const parsedUrl = new URL(value);
+    return ["http:", "https:"].includes(parsedUrl.protocol);
+  } catch {
+    return false;
+  }
+};
+
 export const validateListingPayload = (payload, { isUpdate = false } = {}) => {
   const source = payload || {};
   const validated = {};
@@ -71,6 +89,7 @@ export const validateListingPayload = (payload, { isUpdate = false } = {}) => {
     "parking",
     "furnished",
     "imageUrls",
+    "status",
   ];
 
   for (const field of allowedFields) {
@@ -96,16 +115,33 @@ export const validateListingPayload = (payload, { isUpdate = false } = {}) => {
   if (validated.address !== undefined) {
     validated.address = String(validated.address).trim();
     if (!validated.address) return { error: "Address is required" };
+    if (validated.address.length > 300) {
+      return { error: "Address must be 300 characters or fewer" };
+    }
   }
 
   if (validated.type !== undefined && !["sale", "rent"].includes(validated.type)) {
     return { error: "Type must be sale or rent" };
   }
 
+  if (validated.status !== undefined) {
+    validated.status = String(validated.status).trim().toLowerCase();
+    if (!LISTING_STATUSES.has(validated.status)) {
+      return { error: "Status must be active, draft, sold or rented" };
+    }
+  }
+
   for (const field of ["bedrooms", "bathrooms", "regularPrice", "discountPrice"]) {
     if (validated[field] !== undefined) {
       const parsed = toNumber(validated[field]);
       if (Number.isNaN(parsed)) return { error: `${field} must be a valid number` };
+      const rule = NUMBER_RULES[field];
+      if (rule.integer && !Number.isInteger(parsed)) {
+        return { error: `${rule.label} must be a whole number` };
+      }
+      if (parsed < rule.min || parsed > rule.max) {
+        return { error: `${rule.label} must be between ${rule.min} and ${rule.max}` };
+      }
       validated[field] = parsed;
     }
   }
@@ -130,9 +166,16 @@ export const validateListingPayload = (payload, { isUpdate = false } = {}) => {
     ) {
       return { error: "You must provide 1 to 6 images" };
     }
-    if (!validated.imageUrls.every((item) => typeof item === "string")) {
+    const normalizedImageUrls = validated.imageUrls.map((item) =>
+      typeof item === "string" ? item.trim() : ""
+    );
+    if (
+      normalizedImageUrls.some((item) => !item) ||
+      !normalizedImageUrls.every(isAllowedImageUrl)
+    ) {
       return { error: "Invalid image URLs" };
     }
+    validated.imageUrls = normalizedImageUrls;
   }
 
   if (!isUpdate) {

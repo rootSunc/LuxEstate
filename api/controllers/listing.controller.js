@@ -6,11 +6,14 @@ import path from "path";
 import { randomUUID } from "crypto";
 import {
   ALLOWED_IMAGE_MIME_TYPES,
+  LISTING_STATUSES,
   MAX_UPLOAD_SIZE_BYTES,
   SORT_FIELDS,
   detectImageMimeType,
   validateListingPayload,
 } from "../validators/listing.validator.js";
+import { isObjectId } from "../utils/validation.js";
+import User from "../models/user.model.js";
 
 const escapeRegex = (value) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -54,7 +57,10 @@ export const createListing = async (req, res, next) => {
     const { data, error } = validateListingPayload(req.body);
     if (error) return next(errorHandler(400, error));
 
-    if (data.discountPrice > data.regularPrice) {
+    if (
+      (data.offer && data.discountPrice >= data.regularPrice) ||
+      (!data.offer && data.discountPrice > data.regularPrice)
+    ) {
       return next(errorHandler(400, "Discount price must be lower than regular price"));
     }
 
@@ -104,6 +110,10 @@ export const uploadListingImage = async (req, res, next) => {
 
 export const deleteListing = async (req, res, next) => {
   try {
+    if (!isObjectId(req.params.id)) {
+      return next(errorHandler(400, "Invalid listing id"));
+    }
+
     const listing = await Listing.findById(req.params.id);
     if (!listing) return next(errorHandler(404, "Listing not found"));
     if (req.user.id !== String(listing.userRef)) {
@@ -112,6 +122,7 @@ export const deleteListing = async (req, res, next) => {
 
     await Listing.findByIdAndDelete(req.params.id);
     await Inquiry.deleteMany({ listingRef: req.params.id });
+    await User.updateMany({}, { $pull: { savedListings: listing._id } });
     return res.status(200).json("Listing has been deleted");
   } catch (error) {
     return next(error);
@@ -120,6 +131,10 @@ export const deleteListing = async (req, res, next) => {
 
 export const updateListing = async (req, res, next) => {
   try {
+    if (!isObjectId(req.params.id)) {
+      return next(errorHandler(400, "Invalid listing id"));
+    }
+
     const listing = await Listing.findById(req.params.id);
     if (!listing) return next(errorHandler(404, "Listing not found"));
     if (req.user.id !== String(listing.userRef)) {
@@ -138,7 +153,11 @@ export const updateListing = async (req, res, next) => {
 
     const regularPrice = data.regularPrice ?? listing.regularPrice;
     const discountPrice = data.discountPrice ?? listing.discountPrice;
-    if (discountPrice > regularPrice) {
+    const offer = data.offer ?? listing.offer;
+    if (
+      (offer && discountPrice >= regularPrice) ||
+      (!offer && discountPrice > regularPrice)
+    ) {
       return next(errorHandler(400, "Discount price must be lower than regular price"));
     }
 
@@ -157,6 +176,10 @@ export const updateListing = async (req, res, next) => {
 
 export const getListing = async (req, res, next) => {
   try {
+    if (!isObjectId(req.params.id)) {
+      return next(errorHandler(400, "Invalid listing id"));
+    }
+
     const listing = await Listing.findById(req.params.id);
     if (!listing) {
       return next(errorHandler(404, "Listing not found!"));
@@ -197,6 +220,10 @@ export const getListings = async (req, res, next) => {
       return next(errorHandler(400, "Invalid listing type"));
     }
 
+    const requestedStatus = String(req.query.status || "active").toLowerCase();
+    const status = LISTING_STATUSES.has(requestedStatus) ? requestedStatus : "active";
+    const statusFilter = status === "active" ? { $in: ["active", null] } : status;
+
     const rawSearchTerm = String(req.query.searchTerm || "").trim().slice(0, 100);
     const searchTerm = escapeRegex(rawSearchTerm);
 
@@ -215,6 +242,7 @@ export const getListings = async (req, res, next) => {
       furnished,
       parking,
       type,
+      status: statusFilter,
     })
       .sort({ [sort]: order })
       .skip(startIndex)

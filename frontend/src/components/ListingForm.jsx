@@ -20,6 +20,7 @@ const DEFAULT_LISTING_FORM = {
   offer: false,
   parking: false,
   furnished: false,
+  status: "active",
 };
 
 const fieldClass =
@@ -222,6 +223,26 @@ export default function ListingForm({
               </div>
             </div>
 
+            <div className="grid gap-2">
+              <span className="text-sm font-medium text-slate-700">Status</span>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {["active", "draft", "sold", "rented"].map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => updateField("status", status)}
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-semibold capitalize transition ${
+                      formData.status === status
+                        ? "border-slate-800 bg-slate-800 text-white"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex items-center justify-between gap-3 text-sm font-medium text-slate-700">
                 Bedrooms
@@ -400,6 +421,7 @@ ListingForm.propTypes = {
     offer: PropTypes.bool,
     parking: PropTypes.bool,
     regularPrice: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    status: PropTypes.oneOf(["active", "draft", "sold", "rented"]),
     type: PropTypes.oneOf(["rent", "sale"]),
   }),
   onSubmit: PropTypes.func.isRequired,

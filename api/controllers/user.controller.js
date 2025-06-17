@@ -7,10 +7,15 @@ import {
   ACCESS_TOKEN_COOKIE,
   getAccessTokenCookieOptions,
 } from "../utils/auth.js";
+import { isObjectId } from "../utils/validation.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const updateUser = async (req, res, next) => {
+  if (!isObjectId(req.params.id)) {
+    return next(errorHandler(400, "Invalid user id"));
+  }
+
   if (req.user.id !== req.params.id)
     return next(errorHandler(403, "You can only update your own account"));
 
@@ -73,13 +78,22 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
+  if (!isObjectId(req.params.id)) {
+    return next(errorHandler(400, "Invalid user id"));
+  }
+
   if (req.user.id !== req.params.id)
     return next(errorHandler(403, "You can only delete your own account"));
 
   try {
+    const ownedListings = await Listing.find({ userRef: req.params.id }, { _id: 1 });
+    const ownedListingIds = ownedListings.map((listing) => listing._id);
     const deletedUser = await User.findByIdAndDelete(req.params.id);
     if (!deletedUser) return next(errorHandler(404, "User not found"));
     await Listing.deleteMany({ userRef: req.params.id });
+    if (ownedListingIds.length > 0) {
+      await User.updateMany({}, { $pull: { savedListings: { $in: ownedListingIds } } });
+    }
     await Inquiry.deleteMany({
       $or: [{ ownerRef: req.params.id }, { senderRef: req.params.id }],
     });
@@ -94,6 +108,10 @@ export const deleteUser = async (req, res, next) => {
 };
 
 export const getUserListings = async (req, res, next) => {
+  if (!isObjectId(req.params.id)) {
+    return next(errorHandler(400, "Invalid user id"));
+  }
+
   if (req.user.id === req.params.id) {
     try {
       const listings = await Listing.find({ userRef: req.params.id }).sort({
@@ -108,11 +126,68 @@ export const getUserListings = async (req, res, next) => {
   }
 };
 
+export const getSavedListings = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).populate({
+      path: "savedListings",
+      options: { sort: { createdAt: -1 } },
+    });
+    if (!user) return next(errorHandler(404, "User not found"));
+
+    const savedListings = user.savedListings.filter(Boolean);
+    return res.status(200).json(savedListings);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const saveListing = async (req, res, next) => {
+  try {
+    const listingId = req.params.listingId;
+    if (!isObjectId(listingId)) {
+      return next(errorHandler(400, "Invalid listing id"));
+    }
+
+    const listing = await Listing.findById(listingId);
+    if (!listing) return next(errorHandler(404, "Listing not found"));
+    if (String(listing.userRef) === req.user.id) {
+      return next(errorHandler(400, "You cannot save your own listing"));
+    }
+
+    await User.findByIdAndUpdate(req.user.id, {
+      $addToSet: { savedListings: listing._id },
+    });
+    return res.status(200).json({ saved: true, listingId });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const unsaveListing = async (req, res, next) => {
+  try {
+    const listingId = req.params.listingId;
+    if (!isObjectId(listingId)) {
+      return next(errorHandler(400, "Invalid listing id"));
+    }
+
+    await User.findByIdAndUpdate(req.user.id, {
+      $pull: { savedListings: listingId },
+    });
+    return res.status(200).json({ saved: false, listingId });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getUser = async (req, res, next) => {
   try {
+    if (!isObjectId(req.params.id)) {
+      return next(errorHandler(400, "Invalid user id"));
+    }
+
     const user = await User.findById(req.params.id);
     if (!user) return next(errorHandler(404, "User not found!"));
-    const { password: pass, ...rest } = user._doc;
+    const { password: pass, savedListings, ...rest } = user._doc;
     return res.status(200).json(rest);
   } catch (error) {
     return next(error);

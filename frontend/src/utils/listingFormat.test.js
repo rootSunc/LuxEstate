@@ -3,6 +3,7 @@ import {
   formatCurrency,
   getDiscountLabel,
   getListingPriceLabel,
+  getListingStatusLabel,
   getListingTypeLabel,
 } from "./listingFormat";
 
@@ -40,5 +41,13 @@ describe("listing formatting", () => {
     ).toBe("$250 off");
     expect(getListingTypeLabel("rent")).toBe("For Rent");
     expect(getListingTypeLabel("sale")).toBe("For Sale");
+  });
+
+  it("formats listing status labels", () => {
+    expect(getListingStatusLabel("active")).toBe("Active");
+    expect(getListingStatusLabel("draft")).toBe("Draft");
+    expect(getListingStatusLabel("sold")).toBe("Sold");
+    expect(getListingStatusLabel("rented")).toBe("Rented");
+    expect(getListingStatusLabel()).toBe("Active");
   });
 });

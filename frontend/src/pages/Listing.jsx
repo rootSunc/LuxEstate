@@ -6,6 +6,7 @@ import {
   FaBed,
   FaChair,
   FaExternalLinkAlt,
+  FaHeart,
   FaMapMarkedAlt,
   FaParking,
   FaPen,
@@ -17,6 +18,7 @@ import { apiRequest } from "../utils/api";
 import {
   getDiscountLabel,
   getListingPriceLabel,
+  getListingStatusLabel,
   getListingTypeLabel,
 } from "../utils/listingFormat";
 import {
@@ -32,6 +34,9 @@ export default function Listing() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [contact, setContact] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const params = useParams();
   const { currentUser } = useSelector((state) => state.user);
 
@@ -62,6 +67,33 @@ export default function Listing() {
     return `https://maps.google.com/maps?q=${encodeURIComponent(listing.address)}&output=embed`;
   }, [listing?.address]);
 
+  useEffect(() => {
+    if (!currentUser || !listing || isOwner) {
+      setSaved(false);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchSavedListings = async () => {
+      try {
+        setSaveError("");
+        const data = await apiRequest("/api/users/saved-listings");
+        if (cancelled) return;
+        const savedListingIds = Array.isArray(data)
+          ? data.map((item) => item?._id || item)
+          : [];
+        setSaved(savedListingIds.includes(listing._id));
+      } catch {
+        if (!cancelled) setSaveError("Unable to load saved state.");
+      }
+    };
+
+    fetchSavedListings();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, isOwner, listing]);
+
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -69,6 +101,23 @@ export default function Listing() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    if (!currentUser || !listing || isOwner) return;
+
+    try {
+      setSaving(true);
+      setSaveError("");
+      await apiRequest(`/api/users/saved-listings/${listing._id}`, {
+        method: saved ? "DELETE" : "POST",
+      });
+      setSaved((prev) => !prev);
+    } catch (error) {
+      setSaveError(error.message || "Unable to update saved listing.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -151,6 +200,11 @@ export default function Listing() {
                     <span className="inline-flex items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white">
                       <FaTag className="text-[10px]" />
                       {getDiscountLabel(listing)}
+                    </span>
+                  )}
+                  {listing.status && listing.status !== "active" && (
+                    <span className="rounded-md bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                      {getListingStatusLabel(listing.status)}
                     </span>
                   )}
                 </div>
@@ -246,6 +300,22 @@ export default function Listing() {
               </Link>
             )}
 
+            {currentUser && !isOwner && (
+              <button
+                type="button"
+                onClick={handleSaveToggle}
+                disabled={saving}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold disabled:opacity-70 ${
+                  saved
+                    ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                    : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <FaHeart />
+                {saving ? "Saving..." : saved ? "Saved" : "Save listing"}
+              </button>
+            )}
+
             {currentUser && !isOwner && !contact && (
               <button
                 onClick={() => setContact(true)}
@@ -263,6 +333,7 @@ export default function Listing() {
               </Link>
             )}
             {contact && <Contact listing={listing} />}
+            {saveError && <p className="text-sm text-red-700">{saveError}</p>}
           </div>
         </aside>
       </section>

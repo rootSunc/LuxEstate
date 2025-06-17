@@ -69,6 +69,12 @@ const listingSchema = new mongoose.Schema(
         message: "Images must contain 1 to 6 items",
       },
     },
+    status: {
+      type: String,
+      enum: ["active", "draft", "sold", "rented"],
+      default: "active",
+      index: true,
+    },
     userRef: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

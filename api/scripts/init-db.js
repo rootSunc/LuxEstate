@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import bcryptjs from "bcryptjs";
 import User from "../models/user.model.js";
 import Listing from "../models/listing.model.js";
+import Inquiry from "../models/inquiry.model.js";
 
 dotenv.config();
 
@@ -148,6 +149,9 @@ const resetSeedData = async () => {
 
   if (seedUserIds.length > 0) {
     await Listing.deleteMany({ userRef: { $in: seedUserIds } });
+    await Inquiry.deleteMany({
+      $or: [{ ownerRef: { $in: seedUserIds } }, { senderRef: { $in: seedUserIds } }],
+    });
   }
 
   await User.deleteMany({ email: { $in: seedEmails } });
@@ -198,6 +202,7 @@ const upsertListings = async (usersByEmail) => {
       {
         $set: {
           ...listingData,
+          status: listingData.status || "active",
           userRef: owner._id,
         },
       },

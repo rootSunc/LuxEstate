@@ -58,6 +58,35 @@ describe("validateListingPayload", () => {
     expect(validateListingPayload({ type: "lease" }, { isUpdate: true }).error).toBe(
       "Type must be sale or rent"
     );
+    expect(validateListingPayload({ status: "archived" }, { isUpdate: true }).error).toBe(
+      "Status must be active, draft, sold or rented"
+    );
+  });
+
+  it("enforces numeric ranges and whole-room counts", () => {
+    expect(validateListingPayload({ bedrooms: "1.5" }, { isUpdate: true }).error).toBe(
+      "Bedrooms must be a whole number"
+    );
+    expect(validateListingPayload({ bathrooms: "0" }, { isUpdate: true }).error).toBe(
+      "Bathrooms must be between 1 and 50"
+    );
+    expect(
+      validateListingPayload({ regularPrice: "-1" }, { isUpdate: true }).error
+    ).toBe("Regular price must be between 0 and 100000000");
+  });
+
+  it("trims and validates image URLs", () => {
+    const valid = validateListingPayload(
+      { imageUrls: [" https://example.com/home.jpg "] },
+      { isUpdate: true }
+    );
+    expect(valid.error).toBeUndefined();
+    expect(valid.data.imageUrls).toEqual(["https://example.com/home.jpg"]);
+
+    expect(
+      validateListingPayload({ imageUrls: ["javascript:alert(1)"] }, { isUpdate: true })
+        .error
+    ).toBe("Invalid image URLs");
   });
 });
 

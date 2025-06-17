@@ -31,12 +31,12 @@ make a demo feel closer to a real product.
 
 | Area | What it covers |
 | --- | --- |
-| Search-first discovery | Homepage search, listing filters, sort order, offer chips, empty states, and paginated show-more behavior. |
-| Listing operations | Create, update, delete, and view property listings with validated pricing, amenities, gallery images, map links, and owner-only edit controls. |
+| Search-first discovery | Homepage search, listing filters, sort order, offer chips, empty states, saved homes, and paginated show-more behavior. |
+| Listing operations | Create, update, delete, status-manage, and view property listings with validated pricing, amenities, gallery images, map links, and owner-only edit controls. |
 | Authenticated sessions | Email/password auth with HTTP-only JWT cookies plus Firebase Google sign-in token verification. |
-| Owner workflow | Profile dashboard with owned listings, account management, and inquiry inbox states. |
+| Owner workflow | Profile dashboard with owned listings, status controls, saved listings, account management, and inquiry conversation states. |
 | Upload safety | API image upload path checks MIME type, binary signature, size limits, and persists uploaded files under `/uploads`. |
-| Quality gate | Vitest contracts, frontend lint/build, npm audit, and GitHub Actions CI workflow. |
+| Quality gate | Vitest contracts, API/frontend lint, frontend build, npm audit, and GitHub Actions CI workflow. |
 
 ## Frontend Preview
 
@@ -167,8 +167,9 @@ npm run dev            # API server
 npm run dev:frontend   # Vite frontend
 npm run db:init        # Upsert seed users/listings
 npm run db:reset       # Reset seed users/listings
+npm run lint           # API and frontend lint
 npm test               # Vitest contract/unit tests
-npm run verify         # Audit + tests + frontend lint/build
+npm run verify         # Audit + API lint + tests + frontend lint/build
 npm run build          # Frontend production build
 ```
 
@@ -204,7 +205,18 @@ Legacy `/api/listing/*` routes remain mounted for backwards compatibility.
 
 - `POST /api/inquiries`
 - `GET /api/inquiries/mine`
+- `GET /api/inquiries/sent`
 - `PATCH /api/inquiries/:id/read`
+- `POST /api/inquiries/:id/replies`
+
+</details>
+
+<details>
+<summary>Saved Listings</summary>
+
+- `GET /api/users/saved-listings`
+- `POST /api/users/saved-listings/:listingId`
+- `DELETE /api/users/saved-listings/:listingId`
 
 </details>
 
@@ -214,11 +226,17 @@ Local verification and CI run the same core checks:
 
 ```bash
 npm audit --audit-level=moderate
+npm run lint:api
 npm test
 npm audit --audit-level=moderate --prefix frontend
 npm run lint --prefix frontend
 npm run build --prefix frontend
 ```
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+Security reports should follow [SECURITY.md](SECURITY.md).
 
 ## Documentation
 

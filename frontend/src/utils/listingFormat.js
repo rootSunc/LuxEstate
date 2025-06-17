@@ -18,3 +18,13 @@ export const getDiscountLabel = (listing) => {
 
 export const getListingTypeLabel = (type) =>
   type === "rent" ? "For Rent" : "For Sale";
+
+export const getListingStatusLabel = (status = "active") => {
+  const labels = {
+    active: "Active",
+    draft: "Draft",
+    sold: "Sold",
+    rented: "Rented",
+  };
+  return labels[status] || labels.active;
+};

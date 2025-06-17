@@ -27,9 +27,32 @@ const inquirySchema = new mongoose.Schema(
       minlength: 10,
       maxlength: 1000,
     },
+    replies: {
+      type: [
+        {
+          authorRef: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+          },
+          message: {
+            type: String,
+            required: true,
+            trim: true,
+            minlength: 2,
+            maxlength: 1000,
+          },
+          createdAt: {
+            type: Date,
+            default: Date.now,
+          },
+        },
+      ],
+      default: [],
+    },
     status: {
       type: String,
-      enum: ["new", "read"],
+      enum: ["new", "read", "replied"],
       default: "new",
     },
   },
