@@ -34,20 +34,24 @@ import {
 } from "../utils/listingFormat";
 
 const LISTING_STATUSES = ["active", "draft", "sold", "rented"];
+const DEFAULT_LISTING_STATUS_CLASS = "bg-amber-100 text-amber-900";
+const LISTING_STATUS_CLASSES = {
+  active: "bg-emerald-100 text-emerald-800",
+  draft: "bg-slate-100 text-slate-700",
+  sold: DEFAULT_LISTING_STATUS_CLASS,
+  rented: DEFAULT_LISTING_STATUS_CLASS,
+};
+
+const INQUIRY_STATUS_CLASSES = {
+  new: "bg-emerald-100 text-emerald-800",
+  replied: "bg-sky-100 text-sky-800",
+};
 
 const getListingStatusClass = (status) =>
-  status === "active"
-    ? "bg-emerald-100 text-emerald-800"
-    : status === "draft"
-      ? "bg-slate-100 text-slate-700"
-      : "bg-amber-100 text-amber-900";
+  LISTING_STATUS_CLASSES[status] || DEFAULT_LISTING_STATUS_CLASS;
 
 const getInquiryStatusClass = (status) =>
-  status === "new"
-    ? "bg-emerald-100 text-emerald-800"
-    : status === "replied"
-      ? "bg-sky-100 text-sky-800"
-      : "bg-slate-100 text-slate-600";
+  INQUIRY_STATUS_CLASSES[status] || "bg-slate-100 text-slate-600";
 
 const getReplyAuthorName = (reply, currentUser) => {
   const author = reply.authorRef;
@@ -109,6 +113,25 @@ export default function Profile() {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
+  };
+
+  const handleProfileImageChange = (event) => {
+    const selectedFile = event.target.files?.[0];
+    setFilePerc(0);
+    setFileUploadError("");
+    if (!selectedFile) {
+      setFile(undefined);
+      return;
+    }
+
+    const validationError = validateImageFile(selectedFile);
+    if (validationError) {
+      setFileUploadError(validationError);
+      setFile(undefined);
+      return;
+    }
+
+    setFile(selectedFile);
   };
 
   const handleSubmit = async (e) => {
@@ -544,28 +567,11 @@ export default function Profile() {
               type="file"
               ref={fileRef}
               accept="image/*"
-              onChange={(e) => {
-                const selectedFile = e.target.files?.[0];
-                setFilePerc(0);
-                setFileUploadError("");
-                if (!selectedFile) {
-                  setFile(undefined);
-                  return;
-                }
-
-                const validationError = validateImageFile(selectedFile);
-                if (validationError) {
-                  setFileUploadError(validationError);
-                  setFile(undefined);
-                  return;
-                }
-
-                setFile(selectedFile);
-              }}
+              onChange={handleProfileImageChange}
               hidden
             />
             <img
-              onClick={() => fileRef.current.click()}
+              onClick={() => fileRef.current?.click()}
               src={formData.avatar || currentUser.avatar}
               alt="profile"
               className="mt-2 h-24 w-24 cursor-pointer self-center rounded-full object-cover"
@@ -633,7 +639,7 @@ export default function Profile() {
             </button>
           </div>
 
-          <p className="mt-5 text-red-700">{error ? error : ""}</p>
+          <p className="mt-5 text-red-700">{error || ""}</p>
           <p className="mt-5 text-green-700">
             {updateSuccess ? "User is updated successfully!" : ""}
           </p>

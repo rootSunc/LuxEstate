@@ -18,6 +18,12 @@ import User from "../models/user.model.js";
 const escapeRegex = (value) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const parseBooleanFilter = (value) =>
+  value === undefined || value === "false" ? { $in: [false, true] } : true;
+
+const hasInvalidDiscountPrice = ({ offer, discountPrice, regularPrice }) =>
+  offer ? discountPrice >= regularPrice : discountPrice > regularPrice;
+
 const parseImageDataUrl = (dataUrl) => {
   if (typeof dataUrl !== "string") return null;
   const matched = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
@@ -57,10 +63,7 @@ export const createListing = async (req, res, next) => {
     const { data, error } = validateListingPayload(req.body);
     if (error) return next(errorHandler(400, error));
 
-    if (
-      (data.offer && data.discountPrice >= data.regularPrice) ||
-      (!data.offer && data.discountPrice > data.regularPrice)
-    ) {
+    if (hasInvalidDiscountPrice(data)) {
       return next(errorHandler(400, "Discount price must be lower than regular price"));
     }
 
@@ -154,10 +157,7 @@ export const updateListing = async (req, res, next) => {
     const regularPrice = data.regularPrice ?? listing.regularPrice;
     const discountPrice = data.discountPrice ?? listing.discountPrice;
     const offer = data.offer ?? listing.offer;
-    if (
-      (offer && discountPrice >= regularPrice) ||
-      (!offer && discountPrice > regularPrice)
-    ) {
+    if (hasInvalidDiscountPrice({ offer, discountPrice, regularPrice })) {
       return next(errorHandler(400, "Discount price must be lower than regular price"));
     }
 
@@ -192,26 +192,9 @@ export const getListing = async (req, res, next) => {
 
 export const getListings = async (req, res, next) => {
   try {
-    let offer = req.query.offer;
-    if (offer === undefined || offer === "false") {
-      offer = { $in: [false, true] };
-    } else {
-      offer = true;
-    }
-
-    let furnished = req.query.furnished;
-    if (furnished === undefined || furnished === "false") {
-      furnished = { $in: [false, true] };
-    } else {
-      furnished = true;
-    }
-
-    let parking = req.query.parking;
-    if (parking === undefined || parking === "false") {
-      parking = { $in: [false, true] };
-    } else {
-      parking = true;
-    }
+    const offer = parseBooleanFilter(req.query.offer);
+    const furnished = parseBooleanFilter(req.query.furnished);
+    const parking = parseBooleanFilter(req.query.parking);
 
     let type = req.query.type;
     if (type === undefined || type === "all") {

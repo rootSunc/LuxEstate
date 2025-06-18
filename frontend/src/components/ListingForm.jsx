@@ -23,6 +23,19 @@ const DEFAULT_LISTING_FORM = {
   status: "active",
 };
 
+const LISTING_TYPE_OPTIONS = [
+  { value: "rent", label: "For Rent" },
+  { value: "sale", label: "For Sale" },
+];
+
+const LISTING_STATUS_OPTIONS = ["active", "draft", "sold", "rented"];
+
+const AMENITY_OPTIONS = [
+  { field: "parking", label: "Parking" },
+  { field: "furnished", label: "Furnished" },
+  { field: "offer", label: "Offer" },
+];
+
 const fieldClass =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-800 outline-none transition focus:border-slate-700 focus:ring-2 focus:ring-slate-200";
 
@@ -206,18 +219,18 @@ export default function ListingForm({
             <div className="grid gap-2">
               <span className="text-sm font-medium text-slate-700">Listing type</span>
               <div className="grid grid-cols-2 gap-2">
-                {["rent", "sale"].map((type) => (
+                {LISTING_TYPE_OPTIONS.map(({ value, label }) => (
                   <button
-                    key={type}
+                    key={value}
                     type="button"
-                    onClick={() => updateField("type", type)}
+                    onClick={() => updateField("type", value)}
                     className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${
-                      formData.type === type
+                      formData.type === value
                         ? "border-slate-800 bg-slate-800 text-white"
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    {type === "rent" ? "For Rent" : "For Sale"}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -226,7 +239,7 @@ export default function ListingForm({
             <div className="grid gap-2">
               <span className="text-sm font-medium text-slate-700">Status</span>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {["active", "draft", "sold", "rented"].map((status) => (
+                {LISTING_STATUS_OPTIONS.map((status) => (
                   <button
                     key={status}
                     type="button"
@@ -271,7 +284,7 @@ export default function ListingForm({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              {["parking", "furnished", "offer"].map((field) => (
+              {AMENITY_OPTIONS.map(({ field, label }) => (
                 <button
                   key={field}
                   type="button"
@@ -283,7 +296,7 @@ export default function ListingForm({
                   }`}
                 >
                   {formData[field] && <FaCheck className="text-xs" />}
-                  {field === "parking" ? "Parking" : field === "furnished" ? "Furnished" : "Offer"}
+                  {label}
                 </button>
               ))}
             </div>

@@ -50,26 +50,70 @@ make a demo feel closer to a real product.
 
 ## Architecture
 
+The diagram uses a layered, C4-inspired view so the README shows runtime
+boundaries first, then the implementation details that matter for local demos
+and deployment reviews.
+
 ```mermaid
 flowchart LR
-  Visitor["Buyer / renter browser"] --> Frontend["React + Vite frontend"]
-  Frontend --> Router["React Router pages"]
-  Frontend --> Store["Redux Toolkit + redux-persist"]
-  Frontend --> ApiClient["API helper with credentials included"]
+  Browser["Buyer / owner browser"]:::client
 
-  ApiClient --> Express["Express API"]
-  Express --> Auth["Auth controllers"]
-  Express --> ListingFlow["Listing + inquiry controllers"]
-  Express --> UploadFlow["Upload endpoint"]
+  subgraph Frontend["React Frontend"]
+    direction TB
+    Pages["Route pages<br/>Home, Search, Listing, Profile"]:::frontend
+    State["Redux Toolkit<br/>persisted session state"]:::frontend
+    Media["Image helpers<br/>upload, fallback, legacy URLs"]:::frontend
+    ApiClient["API client<br/>fetch with credentials"]:::frontend
+    Pages --> State
+    Pages --> Media
+    Pages --> ApiClient
+  end
 
-  Auth --> Cookie["HTTP-only JWT session cookie"]
-  Auth --> Firebase["Firebase Google token verification"]
-  ListingFlow --> Validators["Payload validators"]
-  UploadFlow --> FileChecks["MIME, signature, and size checks"]
+  subgraph Api["Express API"]
+    direction TB
+    Edge["Security edge<br/>headers, rate limit, cookies"]:::api
+    Auth["Auth controllers<br/>email/password and Google"]:::api
+    Listings["Listing controllers<br/>CRUD, search, status"]:::api
+    Inquiries["Inquiry controllers<br/>messages, replies, read state"]:::api
+    Upload["Upload endpoint<br/>MIME, signature, 5 MB cap"]:::api
+    Validators["Validation layer<br/>payloads, ObjectIds, image URLs"]:::api
+    Models["Mongoose models<br/>User, Listing, Inquiry"]:::api
+    Edge --> Auth
+    Edge --> Listings
+    Edge --> Inquiries
+    Edge --> Upload
+    Listings --> Validators
+    Upload --> Validators
+    Auth --> Models
+    Listings --> Models
+    Inquiries --> Models
+  end
 
-  Express --> Mongo[(MongoDB via Mongoose)]
-  UploadFlow --> Uploads[(Local uploads directory)]
-  Express --> Static["Static frontend build + /uploads"]
+  subgraph Data["Persistence and Assets"]
+    direction TB
+    Mongo[(MongoDB<br/>users, listings, inquiries)]:::store
+    Uploads[(Local uploads<br/>/uploads)]:::store
+    Session["HTTP-only JWT cookie<br/>browser session"]:::external
+    Firebase["Firebase public certs<br/>Google ID token verification"]:::external
+    Static["Vite production build<br/>served by Express"]:::external
+  end
+
+  Browser -->|browse and manage| Pages
+  ApiClient -->|/api/* with credentials| Edge
+  Auth --> Session
+  Auth --> Firebase
+  Models --> Mongo
+  Upload --> Uploads
+  Edge -. serves production app .-> Static
+
+  classDef client fill:#eff6ff,stroke:#60a5fa,stroke-width:1px,color:#0f172a;
+  classDef frontend fill:#ecfeff,stroke:#22d3ee,stroke-width:1px,color:#164e63;
+  classDef api fill:#f0fdf4,stroke:#22c55e,stroke-width:1px,color:#14532d;
+  classDef store fill:#fff7ed,stroke:#fb923c,stroke-width:1px,color:#7c2d12;
+  classDef external fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#334155;
+  style Frontend fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#0f172a;
+  style Api fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#0f172a;
+  style Data fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#0f172a;
 ```
 
 ## Tech Stack

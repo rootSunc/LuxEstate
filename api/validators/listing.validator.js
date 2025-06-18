@@ -25,6 +25,29 @@ const NUMBER_RULES = {
   discountPrice: { label: "Discount price", min: 0, max: 100000000 },
 };
 
+const LISTING_PAYLOAD_FIELDS = [
+  "name",
+  "description",
+  "address",
+  "type",
+  "bedrooms",
+  "bathrooms",
+  "regularPrice",
+  "discountPrice",
+  "offer",
+  "parking",
+  "furnished",
+  "imageUrls",
+  "status",
+];
+
+const REQUIRED_LISTING_FIELDS = LISTING_PAYLOAD_FIELDS.filter(
+  (field) => field !== "status"
+);
+
+const NUMERIC_FIELDS = Object.keys(NUMBER_RULES);
+const BOOLEAN_FIELDS = ["offer", "parking", "furnished"];
+
 export const detectImageMimeType = (buffer) => {
   if (
     buffer.length >= 3 &&
@@ -76,23 +99,8 @@ const isAllowedImageUrl = (value) => {
 export const validateListingPayload = (payload, { isUpdate = false } = {}) => {
   const source = payload || {};
   const validated = {};
-  const allowedFields = [
-    "name",
-    "description",
-    "address",
-    "type",
-    "bedrooms",
-    "bathrooms",
-    "regularPrice",
-    "discountPrice",
-    "offer",
-    "parking",
-    "furnished",
-    "imageUrls",
-    "status",
-  ];
 
-  for (const field of allowedFields) {
+  for (const field of LISTING_PAYLOAD_FIELDS) {
     if (source[field] !== undefined) {
       validated[field] = source[field];
     }
@@ -131,7 +139,7 @@ export const validateListingPayload = (payload, { isUpdate = false } = {}) => {
     }
   }
 
-  for (const field of ["bedrooms", "bathrooms", "regularPrice", "discountPrice"]) {
+  for (const field of NUMERIC_FIELDS) {
     if (validated[field] !== undefined) {
       const parsed = toNumber(validated[field]);
       if (Number.isNaN(parsed)) return { error: `${field} must be a valid number` };
@@ -146,7 +154,7 @@ export const validateListingPayload = (payload, { isUpdate = false } = {}) => {
     }
   }
 
-  for (const field of ["offer", "parking", "furnished"]) {
+  for (const field of BOOLEAN_FIELDS) {
     if (validated[field] !== undefined) {
       if (typeof validated[field] === "string") {
         if (validated[field] === "true") validated[field] = true;
@@ -179,21 +187,7 @@ export const validateListingPayload = (payload, { isUpdate = false } = {}) => {
   }
 
   if (!isUpdate) {
-    const requiredFields = [
-      "name",
-      "description",
-      "address",
-      "type",
-      "bedrooms",
-      "bathrooms",
-      "regularPrice",
-      "discountPrice",
-      "offer",
-      "parking",
-      "furnished",
-      "imageUrls",
-    ];
-    for (const field of requiredFields) {
+    for (const field of REQUIRED_LISTING_FIELDS) {
       if (validated[field] === undefined) {
         return { error: `${field} is required` };
       }
