@@ -2,9 +2,11 @@ import { FaSearch } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
+import { useAuthSession } from "../context/AuthSessionContext";
 
 export default function Header() {
   const { currentUser } = useSelector((state) => state.user);
+  const { authChecking } = useAuthSession();
   const [searchTerm, setSearchTerm] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
@@ -58,7 +60,12 @@ export default function Header() {
           </li>
 
           <li>
-            {currentUser ? (
+            {authChecking ? (
+              <div
+                className="h-7 w-7 rounded-full bg-slate-300"
+                aria-hidden="true"
+              />
+            ) : currentUser ? (
               <Link to="/profile">
                 <img
                   className="rounded-full h-7 w-7 object-cover"

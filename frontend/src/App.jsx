@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import PrivateRoute from "./components/PrivateRoute";
+import { AuthSessionContext } from "./context/AuthSessionContext";
 import { apiRequest } from "./utils/api";
 import { signInSuccess, signOutUserSuccess } from "./redux/user/userSlice";
 
@@ -48,19 +49,8 @@ export default function App() {
     restoreSession();
   }, [dispatch]);
 
-  if (authChecking) {
-    return (
-      <BrowserRouter future={routerFutureConfig}>
-        <Header />
-        <div className="max-w-6xl mx-auto px-4 py-10 text-slate-600">
-          Loading session...
-        </div>
-      </BrowserRouter>
-    );
-  }
-
   return (
-    <>
+    <AuthSessionContext.Provider value={{ authChecking }}>
       <BrowserRouter future={routerFutureConfig}>
         <Header />
         <Suspense fallback={<RouteFallback />}>
@@ -83,6 +73,6 @@ export default function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
-    </>
+    </AuthSessionContext.Provider>
   );
 }
