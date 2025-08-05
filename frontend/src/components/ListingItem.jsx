@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import { FaBath, FaBed, FaTag } from "react-icons/fa";
 import { MdLocationOn } from "react-icons/md";
@@ -13,7 +14,7 @@ import {
   setImageFallback,
 } from "../utils/imageUrl";
 
-export default function ListingItem({ listing }) {
+const ListingItem = memo(function ListingItem({ listing }) {
   return (
     <article className="w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:w-[330px]">
       <Link to={`/listing/${listing._id}`} className="block">
@@ -21,6 +22,8 @@ export default function ListingItem({ listing }) {
           <img
             src={resolveListingImageUrl(listing.imageUrls[0])}
             alt={listing.name}
+            loading="lazy"
+            decoding="async"
             onError={setImageFallback}
             className="h-full w-full object-cover transition duration-300 hover:scale-105"
           />
@@ -69,7 +72,7 @@ export default function ListingItem({ listing }) {
       </Link>
     </article>
   );
-}
+});
 
 ListingItem.propTypes = {
   listing: PropTypes.shape({
@@ -87,3 +90,5 @@ ListingItem.propTypes = {
     type: PropTypes.oneOf(["rent", "sale"]).isRequired,
   }).isRequired,
 };
+
+export default ListingItem;

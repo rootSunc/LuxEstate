@@ -139,10 +139,14 @@ export default function Home() {
 
   return (
     <div>
-      <section
-        className="relative min-h-[540px] bg-cover bg-center text-white"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      >
+      <section className="relative min-h-[540px] overflow-hidden text-white">
+        <img
+          src={heroImage}
+          alt=""
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-slate-950/50" />
         <div className="relative mx-auto flex min-h-[540px] max-w-6xl flex-col justify-center px-4 py-12">
           <div className="max-w-3xl">

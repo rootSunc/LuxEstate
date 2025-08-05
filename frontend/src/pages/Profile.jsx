@@ -380,6 +380,8 @@ export default function Profile() {
         <img
           src={resolveListingImageUrl(listing.imageUrls[0])}
           alt="listing cover"
+          loading="lazy"
+          decoding="async"
           onError={setImageFallback}
           className="h-16 w-16 rounded-md object-cover"
         />

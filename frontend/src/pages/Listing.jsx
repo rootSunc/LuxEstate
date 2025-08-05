@@ -147,6 +147,8 @@ export default function Listing() {
             <img
               src={activeImage}
               alt={listing.name}
+              fetchPriority="high"
+              decoding="async"
               onError={setImageFallback}
               className="h-[360px] w-full object-cover sm:h-[560px]"
             />
@@ -178,6 +180,8 @@ export default function Listing() {
                 <img
                   src={url}
                   alt={`${listing.name} ${index + 1}`}
+                  loading="lazy"
+                  decoding="async"
                   onError={setImageFallback}
                   className="h-20 w-full object-cover lg:h-[132px]"
                 />
