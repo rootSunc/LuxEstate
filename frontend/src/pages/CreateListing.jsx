@@ -1,17 +1,11 @@
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
-import { useState } from "react";
-import { app } from "../firebase.js";
-import { useSelector } from "react-redux";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../utils/api";
+import { uploadImageFile, validateImageFile } from "../utils/imageUpload";
 
 export default function CreateListing() {
-  const { currentUser } = useSelector((state) => state.user);
   const [files, setFiles] = useState([]);
+  const imageInputRef = useRef(null);
   const [formData, setFormData] = useState({
     imageUrls: [],
     name: "",
@@ -26,95 +20,107 @@ export default function CreateListing() {
     parking: false,
     furnished: false,
   });
-  const [imageUploadError, setImageUploadError] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
-  console.log(formData);
   const navigate = useNavigate();
-  const handleImageSubmit = (e) => {
-    if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
-      setUploading(true);
-      setImageUploadError(false);
-      const promises = [];
-      for (let i = 0; i < files.length; i++) {
-        promises.push(storeImage(files[i]));
-      }
-      Promise.all(promises)
-        .then((urls) => {
-          setFormData({
-            ...formData,
-            imageUrls: formData.imageUrls.concat(urls),
-          });
-          setImageUploadError(false);
-          setUploading(false);
-        })
-        .catch((err) => {
-          setImageUploadError("Image upload failed (2 mb max per image)");
-          setUploading(false);
-        });
-    } else {
-      setImageUploadError("You can only upload 6 images per listing");
-      setUploading(false);
+
+  const isValidHttpUrl = (value) => /^https?:\/\/.+/i.test(value);
+
+  const handleImageSubmit = () => {
+    if (files.length === 0) {
+      setImageUploadError("Please choose at least one image");
+      return;
     }
-  };
-  const storeImage = async (file) => {
-    return new Promise((resolve, reject) => {
-      const storage = getStorage(app);
-      const fileName = new Date().getTime() + file.name;
-      const storageRef = ref(storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log(`Upload is ${progress}% done`);
-        },
-        (error) => {
-          reject(error);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            resolve(downloadURL);
-          });
+    if (files.length + formData.imageUrls.length > 6) {
+      setImageUploadError("You can only upload 6 images per listing");
+      return;
+    }
+    const validationError = files
+      .map((file) => validateImageFile(file))
+      .find(Boolean);
+    if (validationError) {
+      setImageUploadError(validationError);
+      return;
+    }
+
+    setUploading(true);
+    setImageUploadError("");
+    Promise.all(files.map((file) => uploadImageFile(file)))
+      .then((urls) => {
+        setFormData((prev) => ({
+          ...prev,
+          imageUrls: prev.imageUrls.concat(urls),
+        }));
+        setFiles([]);
+        if (imageInputRef.current) {
+          imageInputRef.current.value = "";
         }
-      );
-    });
+      })
+      .catch((uploadError) => {
+        setImageUploadError(uploadError.message || "Image upload failed");
+      })
+      .finally(() => {
+        setUploading(false);
+      });
   };
   const handleRemoveImage = (index) => {
-    setFormData({
-      ...formData,
-      imageUrls: formData.imageUrls.filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      imageUrls: prev.imageUrls.filter((_, i) => i !== index),
+    }));
   };
-  // handle form data event
+
+  const handleAddImageUrl = () => {
+    const normalizedUrl = imageUrlInput.trim();
+    if (!normalizedUrl) {
+      setImageUploadError("Please enter an image URL");
+      return;
+    }
+    if (!isValidHttpUrl(normalizedUrl)) {
+      setImageUploadError("Image URL must start with http:// or https://");
+      return;
+    }
+    if (formData.imageUrls.length >= 6) {
+      setImageUploadError("You can only upload 6 images per listing");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      imageUrls: [...prev.imageUrls, normalizedUrl],
+    }));
+    setImageUrlInput("");
+    setImageUploadError("");
+  };
   const handleChange = (e) => {
     if (e.target.id === "sale" || e.target.id === "rent") {
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         type: e.target.id,
-      });
+      }));
     }
     if (
       e.target.id === "parking" ||
       e.target.id === "furnished" ||
       e.target.id === "offer"
     ) {
-      setFormData({
-        ...formData,
-        [e.target.id]: e.target.checked, // []是为了直接获得value，而不是"value"
-      });
+      setFormData((prev) => ({
+        ...prev,
+        [e.target.id]: e.target.checked,
+      }));
     }
     if (
       e.target.type === "number" ||
       e.target.type === "text" ||
       e.target.type === "textarea"
     ) {
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         [e.target.id]: e.target.value,
-      });
+      }));
     }
   };
   const handleSubmit = async (e) => {
@@ -126,22 +132,14 @@ export default function CreateListing() {
         return setError("Discount price must be lower than regular price");
       setError(false);
       setLoading(true);
-      const res = await fetch("/api/listing/create", {
+      const data = await apiRequest("/api/listing/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...formData,
-          userRef: currentUser._id,
-        }),
+        body: JSON.stringify(formData),
       });
-      const data = await res.json();
       setLoading(false);
-      if (data.success == false) {
-        // 后端next中间件中设置了出现错误时，success属性为false
-        setError(data.message);
-      }
       navigate(`/listing/${data._id}`);
     } catch (error) {
       setError(error.message);
@@ -281,7 +279,6 @@ export default function CreateListing() {
                 )}
               </div>
             </div>
-            {/* discount price could only be views if the "Offer" option is selected */}
             {formData.offer && (
               <div className="flex items-center gap-2">
                 <input
@@ -313,7 +310,8 @@ export default function CreateListing() {
           </p>
           <div className="flex gap-4">
             <input
-              onChange={(e) => setFiles(e.target.files)}
+              ref={imageInputRef}
+              onChange={(e) => setFiles(Array.from(e.target.files || []))}
               className="p-3 border border-gray-300 rounded w-full"
               type="file"
               id="images"
@@ -323,9 +321,26 @@ export default function CreateListing() {
             <button
               type="button"
               onClick={handleImageSubmit}
+              disabled={uploading}
               className="p-3 text-green-700 border border-green-700 rounded uppercase hover:shadow-lg disabled:opacity-80"
             >
               {uploading ? "Uploading..." : "Upload"}
+            </button>
+          </div>
+          <div className="flex gap-4">
+            <input
+              type="url"
+              placeholder="Or paste an image URL"
+              className="p-3 border border-gray-300 rounded w-full"
+              value={imageUrlInput}
+              onChange={(e) => setImageUrlInput(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={handleAddImageUrl}
+              className="p-3 text-blue-700 border border-blue-700 rounded uppercase hover:shadow-lg"
+            >
+              Add URL
             </button>
           </div>
           <p className="text-red-700">{imageUploadError && imageUploadError}</p>
@@ -350,7 +365,6 @@ export default function CreateListing() {
               </div>
             ))}
           <button
-            //   uploading还没完成的时候，"create listing"button必须失效，否则会引起提交的数据不全面
             disabled={loading || uploading}
             className="p-3 bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
           >

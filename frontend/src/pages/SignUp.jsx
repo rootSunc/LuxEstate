@@ -1,39 +1,36 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import OAuth from "../componets/OAuth";
+import { apiRequest } from "../utils/api";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { currentUser } = useSelector((state) => state.user);
   const navigate = useNavigate();
+
+  if (currentUser) return <Navigate to="/" replace />;
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.id]: e.target.value,
     });
-    console.log(formData);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/signup", {
+      await apiRequest("/api/auth/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
-      console.log(data);
-      if (data.success === false) {
-        setLoading(false);
-        setError(data.message);
-        return;
-      }
       setLoading(false);
       setError(null);
       navigate("/sign-in");
@@ -52,6 +49,9 @@ export default function SignUp() {
           placeholder="username"
           className="border p-3 rounded-lg"
           id="username"
+          required
+          minLength={3}
+          maxLength={30}
           onChange={handleChange}
         />
         <input
@@ -59,6 +59,7 @@ export default function SignUp() {
           placeholder="email"
           className="border p-3 rounded-lg"
           id="email"
+          required
           onChange={handleChange}
         />
         <input
@@ -66,6 +67,8 @@ export default function SignUp() {
           placeholder="password"
           className="border p-3 rounded-lg"
           id="password"
+          required
+          minLength={8}
           onChange={handleChange}
         />
         <button
@@ -77,7 +80,7 @@ export default function SignUp() {
         <OAuth />
       </form>
       <div className="flex gap-3 mt-3">
-        <p>Have an anccount?</p>
+        <p>Already have an account?</p>
         <Link to="/sign-in">
           <span className="text-blue-700">Sign In</span>
         </Link>

@@ -10,8 +10,9 @@ const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    signInstart: (state) => {
+    signInStart: (state) => {
       state.loading = true;
+      state.error = null;
     },
     signInSuccess: (state, action) => {
       state.currentUser = action.payload;
@@ -24,21 +25,23 @@ const userSlice = createSlice({
     },
     updateUserStart: (state) => {
       state.loading = true;
+      state.error = null;
     },
     updateUserSuccess: (state, action) => {
       state.currentUser = action.payload;
       state.loading = false;
       state.error = null;
     },
-    updateUserFailue: (state, action) => {
+    updateUserFailure: (state, action) => {
       state.error = action.payload;
       state.loading = false;
     },
     deleteUserStart: (state) => {
       state.loading = true;
+      state.error = null;
     },
-    deleteUserSuccess: (state, action) => {
-      state.currentUser = null; // 在用户删除成功后清空用户信息
+    deleteUserSuccess: (state) => {
+      state.currentUser = null;
       state.loading = false;
       state.error = null;
     },
@@ -48,9 +51,10 @@ const userSlice = createSlice({
     },
     signOutUserStart: (state) => {
       state.loading = true;
+      state.error = null;
     },
-    signOutUserSuccess: (state, action) => {
-      state.currentUser = null; // 在用户删除成功后清空用户信息
+    signOutUserSuccess: (state) => {
+      state.currentUser = null;
       state.loading = false;
       state.error = null;
     },
@@ -62,12 +66,12 @@ const userSlice = createSlice({
 });
 
 export const {
-  signInstart,
+  signInStart,
   signInSuccess,
   signInFailure,
   updateUserStart,
   updateUserSuccess,
-  updateUserFailue,
+  updateUserFailure,
   deleteUserStart,
   deleteUserSuccess,
   deleteUserFailure,

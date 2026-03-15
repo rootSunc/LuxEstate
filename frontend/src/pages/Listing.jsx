@@ -14,6 +14,7 @@ import {
   FaShare,
 } from "react-icons/fa";
 import Contact from "../componets/Contact";
+import { apiRequest } from "../utils/api";
 
 export default function Listing() {
   SwiperCore.use([Navigation]);
@@ -24,28 +25,22 @@ export default function Listing() {
   const [contact, setContact] = useState(false);
   const params = useParams();
   const { currentUser } = useSelector((state) => state.user);
-  // useEffect 钩子函数不应该直接使用异步函数，因为如果你这么做，它会返回一个 Promise，而不是清理函数或者 undefined。React期望 useEffect 的返回值是一个函数（用于清理），或者是 undefined。因此，当你将异步函数直接作为 useEffect 的执行函数时，会出现警告。(  useEffect(async () => {})
+
   useEffect(() => {
-    async function fetchData() {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(false);
-        const res = await fetch(`/api/listing/get/${params.listingId}`);
-        const data = await res.json();
-        if (data.success === false) {
-          setError(true);
-        } else {
-          setListing(data);
-          setError(false);
-        }
-      } catch (error) {
+        const data = await apiRequest(`/api/listing/get/${params.listingId}`);
+        setListing(data);
+      } catch {
         setError(true);
       } finally {
-        setLoading(false); // 在最后总是关闭加载状态
+        setLoading(false);
       }
-    }
+    };
     fetchData();
-  }, [params.listingId]); // 依赖数组中包含 `params.listingId`，确保当ID变化时重新获取数据
+  }, [params.listingId]);
 
   return (
     <main>
@@ -61,7 +56,7 @@ export default function Listing() {
                 <div
                   className="h-[550px]"
                   style={{
-                    background: `url(${url}) center no-repeat`, // 这是CSS中引用背景图片的方式。它告诉浏览器在给定的URL加载图片，并使用它作为背景。
+                    background: `url(${url}) center no-repeat`,
                     backgroundSize: "cover",
                   }}
                 ></div>
@@ -77,12 +72,12 @@ export default function Listing() {
                 setCopied(true);
                 setTimeout(() => {
                   setCopied(false);
-                }, 2000); //通常用于显示一个临时的通知或反馈消息
+                }, 2000);
               }}
             />
           </div>
           {copied && (
-            <p className="fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-100 p-2'">
+            <p className="fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-100 p-2">
               Link Copied!
             </p>
           )}
@@ -94,7 +89,6 @@ export default function Listing() {
                 ? listing.discountPrice.toLocaleString("en-US")
                 : listing.regularPrice.toLocaleString("en-US")}
               {listing.type === "rent" && " / month"}
-              {/* 检查listing.type是否等于rent。如果是，将显示" / month"，说明这是租金价格，按月计算 */}
             </p>
             <p className="flex item-center mt-4 gap-1 text-slate-600 text-sm">
               <FaMapMarkedAlt className="text-green-700" />
@@ -130,15 +124,17 @@ export default function Listing() {
               <li className="flex items-center gap-1 whitespace-nowrap">
                 <FaParking className="text-lg" />
                 {listing.parking ? "Parking spot" : "No parking"}
-              </li>{" "}
+              </li>
               <li className="flex items-center gap-1 whitespace-nowrap">
                 <FaChair className="text-lg" />
                 {listing.furnished ? "Furnished" : "Unfurnished"}
               </li>
             </ul>
-            {/* 通过Contact控制button,点击后重新设置contact = true，button不可见 */}
             {currentUser && listing.userRef !== currentUser._id && !contact && (
-              <button onClick={() => setContact(true)} className="bg-slate-700 text-white rounded-lg uppercase p-3 hover:opacity-90">
+              <button
+                onClick={() => setContact(true)}
+                className="bg-slate-700 text-white rounded-lg uppercase p-3 hover:opacity-90"
+              >
                 Contact Landlord
               </button>
             )}

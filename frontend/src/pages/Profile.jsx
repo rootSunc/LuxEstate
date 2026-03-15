@@ -1,16 +1,9 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useRef, useState } from "react";
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
-import { app } from "../firebase";
 import {
   updateUserStart,
   updateUserSuccess,
-  updateUserFailue,
+  updateUserFailure,
   deleteUserFailure,
   deleteUserStart,
   deleteUserSuccess,
@@ -18,91 +11,77 @@ import {
   signOutUserFailure,
   signOutUserSuccess,
 } from "../redux/user/userSlice";
-import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { apiRequest } from "../utils/api";
+import { uploadImageFile, validateImageFile } from "../utils/imageUpload";
 
 export default function Profile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
   const fileRef = useRef(null);
   const [file, setFile] = useState(undefined);
   const [filePerc, setFilePerc] = useState(0);
-  const [fileUploadError, setFileUploadError] = useState(false);
+  const [fileUploadError, setFileUploadError] = useState("");
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (file) {
-      handleFileUpload(file);
-    }
+    if (!file) return;
+
+    let isCancelled = false;
+    const handleFileUpload = async () => {
+      try {
+        setFileUploadError("");
+        setFilePerc(1);
+        const uploadedImageUrl = await uploadImageFile(file);
+        if (isCancelled) return;
+        setFormData((prev) => ({ ...prev, avatar: uploadedImageUrl }));
+        setFilePerc(100);
+      } catch (uploadError) {
+        if (isCancelled) return;
+        setFileUploadError(uploadError.message || "Image upload failed");
+        setFilePerc(0);
+      }
+    };
+
+    handleFileUpload();
+    return () => {
+      isCancelled = true;
+    };
   }, [file]);
 
-  const handleFileUpload = (file) => {
-    const storage = getStorage(app);
-    const fileName = new Date().getTime() + file.name;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        // console.log("upload is " + progress + "% done");
-        setFilePerc(Math.round(progress));
-      },
-      (error) => {
-        setFileUploadError(true);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          setFormData({ ...formData, avatar: downloadURL });
-        });
-      }
-    );
-  };
-
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       dispatch(updateUserStart());
-      const res = await fetch(`/api/users/update/${currentUser._id}`, {
-        method: "POST",
+      const data = await apiRequest(`/api/users/update/${currentUser._id}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
-      if (data.success === false) {
-        dispatch(updateUserFailue(data.message));
-        return;
-      }
       dispatch(updateUserSuccess(data));
       setUpdateSuccess(true);
     } catch (error) {
-      dispatch(updateUserFailue(error.message));
+      dispatch(updateUserFailure(error.message));
     }
   };
 
   const handleDeleteUser = async () => {
     try {
       dispatch(deleteUserStart());
-      const res = await fetch(`/api/users/delete/${currentUser._id}`, {
+      await apiRequest(`/api/users/delete/${currentUser._id}`, {
         method: "DELETE",
       });
-      const data = await res.json();
-      if (data.success === false) {
-        dispatch(deleteUserFailure(data.message));
-        return;
-      }
-      dispatch(deleteUserSuccess(data));
+      dispatch(deleteUserSuccess());
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
     }
@@ -110,54 +89,47 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     try {
-      dispatch(signOutUserStart);
-      const res = await fetch("/api/auth/signout"); // get是默认的方法，如果方法是get则可以省略
-      const data = await res.json();
-      if (data.success === false) {
-        dispatch(signOutUserFailure(data.message));
-        return;
-      }
-      dispatch(signOutUserSuccess(data));
+      dispatch(signOutUserStart());
+      await apiRequest("/api/auth/signout", {
+        method: "POST",
+      });
+      dispatch(signOutUserSuccess());
     } catch (error) {
-      dispatch(signOutUserFailure(data.message));
+      dispatch(signOutUserFailure(error.message));
     }
   };
 
   const handleShowListings = async () => {
     try {
-      setShowListingsError(false); // clear previous show listing error
-      const res = await fetch(`/api/users/listings/${currentUser._id}`);
-      const data = await res.json();
-      if (data.success === false) {
-        setShowListingsError(true);
-        return;
-      }
-      setUserListings(data);
-    } catch (error) {
+      setShowListingsError(false);
+      setListingsLoading(true);
+      const data = await apiRequest(`/api/users/listings/${currentUser._id}`);
+      setUserListings(Array.isArray(data) ? data : []);
+    } catch {
       setShowListingsError(true);
+    } finally {
+      setListingsLoading(false);
     }
   };
 
   const handleListingDelete = async (listingId) => {
     try {
-      const res = await fetch(`/api/listing/delete/${listingId}`, {
+      await apiRequest(`/api/listing/delete/${listingId}`, {
         method: "DELETE",
       });
-      if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${res.status}`);
-      }
-      const data = await res.json();
-      if (data.success === false) {
-        console.log(data.message);
-        return;
-      }
       setUserListings((prev) =>
         prev.filter((listing) => listing._id !== listingId)
       );
-    } catch (error) {
-      console.log(error.message);
+    } catch {
+      setShowListingsError(true);
     }
   };
+
+  useEffect(() => {
+    if (currentUser?._id) {
+      handleShowListings();
+    }
+  }, [currentUser?._id]);
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
@@ -167,7 +139,22 @@ export default function Profile() {
           ref={fileRef}
           accept="image/*"
           onChange={(e) => {
-            setFile(e.target.files[0]);
+            const selectedFile = e.target.files?.[0];
+            setFilePerc(0);
+            setFileUploadError("");
+            if (!selectedFile) {
+              setFile(undefined);
+              return;
+            }
+
+            const validationError = validateImageFile(selectedFile);
+            if (validationError) {
+              setFileUploadError(validationError);
+              setFile(undefined);
+              return;
+            }
+
+            setFile(selectedFile);
           }}
           hidden
         />
@@ -179,7 +166,7 @@ export default function Profile() {
         />
         <p className="text-sm self-center">
           {fileUploadError ? (
-            <span className="text-red-700">Error Image Uploaded!</span>
+            <span className="text-red-700">{fileUploadError}</span>
           ) : filePerc > 0 && filePerc < 100 ? (
             <span className="text-slate-700"> {`uploading ${filePerc}%`} </span>
           ) : filePerc === 100 ? (
@@ -237,11 +224,22 @@ export default function Profile() {
         {updateSuccess ? "User is updated successfully!" : ""}
       </p>
       <button onClick={handleShowListings} className="text-green-700 w-full">
-        Show Listings
+        {listingsLoading ? "Loading Listings..." : "Refresh Listings"}
       </button>
       <p className="text-red-700 mt-5">
         {showListingsError ? "Error showing listings" : ""}
       </p>
+      {!listingsLoading && userListings.length === 0 && (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+          <p className="text-slate-700">You have not created any listings yet.</p>
+          <Link
+            to="/create-listing"
+            className="mt-3 inline-block rounded-lg bg-slate-700 px-4 py-2 text-white hover:opacity-90"
+          >
+            Create Your First Listing
+          </Link>
+        </div>
+      )}
       {userListings && userListings.length > 0 && (
         <div className="flex flex-col gap-3">
           <h1 className="text-center mt-7 text-2xl font-semibold">

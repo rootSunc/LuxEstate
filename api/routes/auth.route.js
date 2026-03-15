@@ -4,12 +4,15 @@ import {
   signin,
   google,
   signOut,
+  getCurrentUser,
 } from "../controllers/auth.controller.js";
+import { verifyToken } from "../utils/verifyUser.js";
 
 const router = express.Router();
 router.post("/signup", signup);
 router.post("/signin", signin);
 router.post("/google", google);
-router.get("/signout", signOut);
+router.post("/signout", signOut);
+router.get("/me", verifyToken, getCurrentUser);
 
 export default router;

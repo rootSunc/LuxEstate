@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
-    "build": "npm install && npm install --prefix frontend && npm run build --prefix frontend"
+    "build": "npm run build --prefix frontend",
+    "db:init": "node api/scripts/init-db.js",
+    "db:reset": "node api/scripts/init-db.js --reset"
   },
   "keywords": [],
   "author": "",

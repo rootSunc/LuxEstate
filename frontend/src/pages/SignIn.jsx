@@ -2,56 +2,42 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  signInstart,
+  signInStart,
   signInSuccess,
   signInFailure,
 } from "../redux/user/userSlice";
 import OAuth from "../componets/OAuth";
+import { apiRequest } from "../utils/api";
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
-  const { loading, error } = useSelector((state) => state.user);
-  // const [error, setError] = useState(null);
-  // const [loading, setLoading] = useState(false);
+  const { loading, error, currentUser } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  if (currentUser) return <Navigate to="/" replace />;
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.id]: e.target.value,
     });
-    console.log(formData);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // setLoading(true);
-      dispatch(signInstart);
-      const res = await fetch("/api/auth/signin", {
+      dispatch(signInStart());
+      const data = await apiRequest("/api/auth/signin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
-      console.log(data);
-      if (data.success === false) {
-        // setLoading(false);
-        // setError(data.message);
-        dispatch(signInFailure(data.message));
-        dispatch(signInFailure(null)); // 重置错误状态，使得注册完成后跳转至登录页面不返回错误
-        return;
-      }
-      // setLoading(false);
-      // setError(null);
       dispatch(signInSuccess(data));
       navigate("/");
     } catch (error) {
-      // setLoading(false);
-      // setError(error.message);
       dispatch(signInFailure(error.message));
     }
   };
@@ -65,6 +51,7 @@ export default function SignIn() {
           placeholder="email"
           className="border p-3 rounded-lg"
           id="email"
+          required
           onChange={handleChange}
         />
         <input
@@ -72,6 +59,8 @@ export default function SignIn() {
           placeholder="password"
           className="border p-3 rounded-lg"
           id="password"
+          required
+          minLength={8}
           onChange={handleChange}
         />
         <button
@@ -83,7 +72,7 @@ export default function SignIn() {
         <OAuth />
       </form>
       <div className="flex gap-3 mt-3">
-        <p>Dont have an anccount?</p>
+        <p>Don't have an account?</p>
         <Link to="/sign-up">
           <span className="text-blue-700">Sign Up</span>
         </Link>
