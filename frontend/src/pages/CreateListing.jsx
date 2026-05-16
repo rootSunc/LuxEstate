@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import ListingForm from "../componets/ListingForm";
+import ListingForm from "../components/ListingForm";
 import { apiRequest } from "../utils/api";
 
 export default function CreateListing() {
   const navigate = useNavigate();
 
   const handleCreateListing = async (formData) => {
-    const data = await apiRequest("/api/listing/create", {
+    const data = await apiRequest("/api/listings", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

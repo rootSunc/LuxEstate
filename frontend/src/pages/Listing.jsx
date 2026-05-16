@@ -12,7 +12,7 @@ import {
   FaShare,
   FaTag,
 } from "react-icons/fa";
-import Contact from "../componets/Contact";
+import Contact from "../components/Contact";
 import { apiRequest } from "../utils/api";
 import {
   getDiscountLabel,
@@ -38,7 +38,7 @@ export default function Listing() {
       try {
         setLoading(true);
         setError("");
-        const data = await apiRequest(`/api/listing/get/${params.listingId}`);
+        const data = await apiRequest(`/api/listings/${params.listingId}`);
         setListing(data);
         setActiveImageIndex(0);
       } catch (fetchError) {

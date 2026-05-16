@@ -22,5 +22,10 @@ router.delete("/delete/:id", verifyToken, deleteListing);
 router.patch("/update/:id", verifyToken, updateListing);
 router.get("/get/:id", getListing);
 router.get("/get", getListings);
+router.post("/", verifyToken, createListing);
+router.get("/", getListings);
+router.get("/:id", getListing);
+router.patch("/:id", verifyToken, updateListing);
+router.delete("/:id", verifyToken, deleteListing);
 
 export default router;

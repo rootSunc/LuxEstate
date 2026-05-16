@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import OAuth from "../componets/OAuth";
+import OAuth from "../components/OAuth";
 import { apiRequest } from "../utils/api";
 
 export default function SignUp() {

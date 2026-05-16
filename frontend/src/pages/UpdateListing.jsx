@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import ListingForm from "../componets/ListingForm";
+import ListingForm from "../components/ListingForm";
 import { apiRequest } from "../utils/api";
 
 export default function UpdateListing() {
@@ -15,7 +15,7 @@ export default function UpdateListing() {
       try {
         setLoading(true);
         setError("");
-        const data = await apiRequest(`/api/listing/get/${params.listingId}`);
+        const data = await apiRequest(`/api/listings/${params.listingId}`);
         setListing(data);
       } catch (fetchError) {
         setError(fetchError.message || "Unable to load listing.");
@@ -28,7 +28,7 @@ export default function UpdateListing() {
   }, [params.listingId]);
 
   const handleUpdateListing = async (formData) => {
-    const data = await apiRequest(`/api/listing/update/${params.listingId}`, {
+    const data = await apiRequest(`/api/listings/${params.listingId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

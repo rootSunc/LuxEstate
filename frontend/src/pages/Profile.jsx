@@ -13,7 +13,7 @@ import {
 } from "../redux/user/userSlice";
 import { Link } from "react-router-dom";
 import { FaEdit, FaHome, FaSignOutAlt, FaTrash } from "react-icons/fa";
-import ConfirmDialog from "../componets/ConfirmDialog";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { apiRequest } from "../utils/api";
 import { uploadImageFile, validateImageFile } from "../utils/imageUpload";
 import { getListingPriceLabel } from "../utils/listingFormat";
@@ -29,6 +29,9 @@ export default function Profile() {
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(false);
+  const [inquiries, setInquiries] = useState([]);
+  const [inquiriesLoading, setInquiriesLoading] = useState(false);
+  const [inquiriesError, setInquiriesError] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const dispatch = useDispatch();
 
@@ -120,7 +123,7 @@ export default function Profile() {
 
   const handleListingDelete = async (listingId) => {
     try {
-      await apiRequest(`/api/listing/delete/${listingId}`, {
+      await apiRequest(`/api/listings/${listingId}`, {
         method: "DELETE",
       });
       setUserListings((prev) =>
@@ -128,6 +131,36 @@ export default function Profile() {
       );
     } catch {
       setShowListingsError(true);
+    }
+  };
+
+  const handleShowInquiries = useCallback(async () => {
+    if (!currentUser?._id) return;
+
+    try {
+      setInquiriesError(false);
+      setInquiriesLoading(true);
+      const data = await apiRequest("/api/inquiries/mine");
+      setInquiries(Array.isArray(data) ? data : []);
+    } catch {
+      setInquiriesError(true);
+    } finally {
+      setInquiriesLoading(false);
+    }
+  }, [currentUser?._id]);
+
+  const handleMarkInquiryRead = async (inquiryId) => {
+    try {
+      const updatedInquiry = await apiRequest(`/api/inquiries/${inquiryId}/read`, {
+        method: "PATCH",
+      });
+      setInquiries((prev) =>
+        prev.map((inquiry) =>
+          inquiry._id === inquiryId ? { ...inquiry, status: updatedInquiry.status } : inquiry
+        )
+      );
+    } catch {
+      setInquiriesError(true);
     }
   };
 
@@ -149,8 +182,9 @@ export default function Profile() {
   useEffect(() => {
     if (currentUser?._id) {
       handleShowListings();
+      handleShowInquiries();
     }
-  }, [currentUser?._id, handleShowListings]);
+  }, [currentUser?._id, handleShowInquiries, handleShowListings]);
   return (
     <main className="mx-auto max-w-6xl px-4 py-7">
       <div className="mb-6">
@@ -340,6 +374,81 @@ export default function Profile() {
           ))}
         </div>
       )}
+
+      <div className="mt-8 border-t border-slate-100 pt-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold text-slate-900">Inquiries</h2>
+          <button
+            type="button"
+            onClick={handleShowInquiries}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            {inquiriesLoading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+        {inquiriesError && (
+          <p className="mb-3 text-sm text-red-700">Error loading inquiries.</p>
+        )}
+        {!inquiriesLoading && inquiries.length === 0 && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            No buyer or renter inquiries yet.
+          </div>
+        )}
+        {inquiries.length > 0 && (
+          <div className="grid gap-3">
+            {inquiries.map((inquiry) => (
+              <div
+                key={inquiry._id}
+                className="rounded-lg border border-slate-200 p-4"
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-900">
+                      {inquiry.senderRef?.username || "Interested buyer"}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {inquiry.senderRef?.email || "No email available"}
+                    </p>
+                  </div>
+                  <span
+                    className={`w-fit rounded-md px-2.5 py-1 text-xs font-semibold ${
+                      inquiry.status === "new"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {inquiry.status}
+                  </span>
+                </div>
+                {inquiry.listingRef?._id ? (
+                  <Link
+                    to={`/listing/${inquiry.listingRef._id}`}
+                    className="mt-3 block text-sm font-semibold text-sky-800 hover:underline"
+                  >
+                    {inquiry.listingRef.name}
+                  </Link>
+                ) : (
+                  <p className="mt-3 text-sm font-semibold text-slate-500">
+                    Listing unavailable
+                  </p>
+                )}
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {inquiry.message}
+                </p>
+                {inquiry.status === "new" && (
+                  <button
+                    type="button"
+                    onClick={() => handleMarkInquiryRead(inquiry._id)}
+                    className="mt-3 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Mark read
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       </section>
       </div>
 
