@@ -70,9 +70,18 @@ if (!process.env.VERCEL) {
 }
 
 app.use("/uploads", express.static(uploadDir, { maxAge: "1d" }));
-app.get("/api/health", (req, res) =>
-  res.status(200).json({ ok: true, database: getDatabaseStatus() })
-);
+app.get("/api/health", async (req, res) => {
+  try {
+    await connectDatabase();
+    return res.status(200).json({ ok: true, database: getDatabaseStatus() });
+  } catch (error) {
+    return res.status(503).json({
+      ok: false,
+      database: getDatabaseStatus(),
+      message: error.message || "Database connection failed",
+    });
+  }
+});
 app.use("/api/users", requireDatabase, userRoute);
 app.use("/api/auth", requireDatabase, authRoute);
 app.use("/api/listing", requireDatabase, listingRouter);
