@@ -15,6 +15,11 @@ import UpdateListing from "./pages/UpdateListing";
 import { apiRequest } from "./utils/api";
 import { signInSuccess, signOutUserSuccess } from "./redux/user/userSlice";
 
+const routerFutureConfig = {
+  v7_relativeSplatPath: true,
+  v7_startTransition: true,
+};
+
 export default function App() {
   const [authChecking, setAuthChecking] = useState(true);
   const dispatch = useDispatch();
@@ -36,7 +41,7 @@ export default function App() {
 
   if (authChecking) {
     return (
-      <BrowserRouter>
+      <BrowserRouter future={routerFutureConfig}>
         <Header />
         <div className="max-w-6xl mx-auto px-4 py-10 text-slate-600">
           Loading session...
@@ -47,7 +52,7 @@ export default function App() {
 
   return (
     <>
-      <BrowserRouter>
+      <BrowserRouter future={routerFutureConfig}>
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />

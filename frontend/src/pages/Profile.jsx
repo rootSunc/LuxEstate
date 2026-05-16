@@ -12,8 +12,11 @@ import {
   signOutUserSuccess,
 } from "../redux/user/userSlice";
 import { Link } from "react-router-dom";
+import { FaEdit, FaHome, FaSignOutAlt, FaTrash } from "react-icons/fa";
+import ConfirmDialog from "../componets/ConfirmDialog";
 import { apiRequest } from "../utils/api";
 import { uploadImageFile, validateImageFile } from "../utils/imageUpload";
+import { getListingPriceLabel } from "../utils/listingFormat";
 
 export default function Profile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
@@ -26,6 +29,7 @@ export default function Profile() {
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -127,14 +131,37 @@ export default function Profile() {
     }
   };
 
+  const handleConfirm = async () => {
+    const action = confirmAction;
+    setConfirmAction(null);
+    if (!action) return;
+
+    if (action.type === "account") {
+      await handleDeleteUser();
+      return;
+    }
+
+    if (action.type === "listing") {
+      await handleListingDelete(action.listingId);
+    }
+  };
+
   useEffect(() => {
     if (currentUser?._id) {
       handleShowListings();
     }
   }, [currentUser?._id, handleShowListings]);
   return (
-    <div className="p-3 max-w-lg mx-auto">
-      <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
+    <main className="mx-auto max-w-6xl px-4 py-7">
+      <div className="mb-6">
+        <h1 className="text-3xl font-semibold text-slate-900">Profile</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Manage account details and keep your published properties current.
+        </p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+      <section className="h-fit rounded-lg border border-slate-200 bg-white p-5">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           type="file"
@@ -210,30 +237,50 @@ export default function Profile() {
           Create Listing
         </Link>
       </form>
-      <div className="flex justify-between mt-2">
-        <span
-          onClick={handleDeleteUser}
-          className="text-red-700 cursor-pointer"
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => setConfirmAction({ type: "account" })}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
         >
-          Delete Account
-        </span>
-        <span onClick={handleSignOut} className="text-red-700 cursor-pointer">
-          Sign Out
-        </span>
+          <FaTrash />
+          Delete account
+        </button>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          <FaSignOutAlt />
+          Sign out
+        </button>
       </div>
 
       <p className="text-red-700 mt-5">{error ? error : ""}</p>
       <p className="text-green-700 mt-5">
         {updateSuccess ? "User is updated successfully!" : ""}
       </p>
-      <button onClick={handleShowListings} className="text-green-700 w-full">
-        {listingsLoading ? "Loading Listings..." : "Refresh Listings"}
-      </button>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <FaHome className="text-slate-600" />
+          <h2 className="text-xl font-semibold text-slate-900">My listings</h2>
+        </div>
+        <button
+          type="button"
+          onClick={handleShowListings}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          {listingsLoading ? "Loading..." : "Refresh"}
+        </button>
+      </div>
       <p className="text-red-700 mt-5">
         {showListingsError ? "Error showing listings" : ""}
       </p>
       {!listingsLoading && userListings.length === 0 && (
-        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <p className="text-slate-700">You have not created any listings yet.</p>
           <Link
             to="/create-listing"
@@ -245,42 +292,71 @@ export default function Profile() {
       )}
       {userListings && userListings.length > 0 && (
         <div className="flex flex-col gap-3">
-          <h1 className="text-center mt-7 text-2xl font-semibold">
-            My Listing
-          </h1>
           {userListings.map((listing) => (
             <div
-              className="border rounded-lg p-3 flex justify-between items-center gap-4"
+              className="grid grid-cols-[72px_1fr_auto] items-center gap-4 rounded-lg border border-slate-200 p-3"
               key={listing._id}
             >
               <Link to={`/listing/${listing._id}`}>
                 <img
                   src={listing.imageUrls[0]}
                   alt="listing cover"
-                  className="h-16 w-16 object-contain"
+                  className="h-16 w-16 rounded-md object-cover"
                 />
               </Link>
-              <Link
-                className="text-slate-700 font-semibold flex-1 hover:underline truncate"
-                to={`/listing/${listing._id}`}
-              >
-                <p>{listing.name}</p>
-              </Link>
-              <div className="flex flex-col items-center">
-                <button
-                  onClick={() => handleListingDelete(listing._id)}
-                  className="text-red-700 uppercase"
+              <div className="min-w-0">
+                <Link
+                  className="block truncate font-semibold text-slate-800 hover:underline"
+                  to={`/listing/${listing._id}`}
                 >
-                  Delete
+                  {listing.name}
+                </Link>
+                <p className="mt-1 text-sm text-slate-500">
+                  {getListingPriceLabel(listing)}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setConfirmAction({ type: "listing", listingId: listing._id })
+                  }
+                  className="rounded-md p-2 text-red-700 hover:bg-red-50"
+                  aria-label="Delete listing"
+                >
+                  <FaTrash />
                 </button>
                 <Link to={`/update-listing/${listing._id}`}>
-                  <button className="text-green-700 uppercase">Edit</button>
+                  <button
+                    type="button"
+                    className="rounded-md p-2 text-emerald-700 hover:bg-emerald-50"
+                    aria-label="Edit listing"
+                  >
+                    <FaEdit />
+                  </button>
                 </Link>
               </div>
             </div>
           ))}
         </div>
       )}
-    </div>
+      </section>
+      </div>
+
+      {confirmAction && (
+        <ConfirmDialog
+          destructive
+          title={confirmAction.type === "account" ? "Delete account?" : "Delete listing?"}
+          description={
+            confirmAction.type === "account"
+              ? "This removes your account and all listings you own. This cannot be undone."
+              : "This removes the listing from search and your profile. This cannot be undone."
+          }
+          confirmLabel={confirmAction.type === "account" ? "Delete account" : "Delete listing"}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={handleConfirm}
+        />
+      )}
+    </main>
   );
 }
