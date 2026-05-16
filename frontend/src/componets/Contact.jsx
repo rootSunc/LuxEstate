@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import PropTypes from "prop-types";
 import { apiRequest } from "../utils/api";
 
 export default function Contact({ listing }) {
@@ -39,7 +40,9 @@ export default function Contact({ listing }) {
           ></textarea>
 
           <Link
-            to={`mailto:${landlord.email}?subject=Regarding ${listing.name}&body=${message}`}
+            to={`mailto:${encodeURIComponent(landlord.email)}?subject=${encodeURIComponent(
+              `Regarding ${listing.name}`
+            )}&body=${encodeURIComponent(message)}`}
             className="bg-slate-700 text-white text-center p-3 uppercase rounded-lg hover:opacity-95"
           >
             Send Message
@@ -49,3 +52,10 @@ export default function Contact({ listing }) {
     </>
   );
 }
+
+Contact.propTypes = {
+  listing: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    userRef: PropTypes.string.isRequired,
+  }).isRequired,
+};

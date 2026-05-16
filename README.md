@@ -25,6 +25,7 @@ Create a `.env` file in the project root:
 ```bash
 MONGO=mongodb+srv://<user>:<password>@<cluster>/<database>
 JWT_SECRET=replace_with_a_strong_secret
+FIREBASE_PROJECT_ID=lux-estate-5643b
 PORT=3000
 PUBLIC_BASE_URL=http://localhost:3000
 SEED_USER_PASSWORD=ChangeMe123!
@@ -32,6 +33,8 @@ SEED_USER_PASSWORD=ChangeMe123!
 
 Notes:
 - `MONGO` and `JWT_SECRET` are required.
+- `FIREBASE_PROJECT_ID` is required for Google OAuth because the API verifies
+  Firebase ID tokens before creating a LuxEstate session.
 - `PUBLIC_BASE_URL` is optional but recommended for stable image URLs.
 - `SEED_USER_PASSWORD` is optional and used by the database seed script.
 

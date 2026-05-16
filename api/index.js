@@ -13,6 +13,7 @@ dotenv.config();
 const app = express();
 const __dirname = path.resolve();
 const port = Number(process.env.PORT) || 3000;
+const uploadDir = path.resolve(process.env.UPLOAD_DIR || "uploads");
 
 if (process.env.VERCEL) {
   app.set("trust proxy", 1);
@@ -75,7 +76,7 @@ if (!process.env.VERCEL) {
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/listing", listingRouter);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(uploadDir, { maxAge: "1d" }));
 app.get("/api/health", (req, res) => res.status(200).json({ ok: true }));
 app.use("/api", (req, res, next) => {
   next(errorHandler(404, "API route not found"));

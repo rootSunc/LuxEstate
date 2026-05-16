@@ -78,6 +78,7 @@ export const deleteUser = async (req, res, next) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
     if (!deletedUser) return next(errorHandler(404, "User not found"));
+    await Listing.deleteMany({ userRef: req.params.id });
 
     return res
       .clearCookie(ACCESS_TOKEN_COOKIE, getAccessTokenCookieOptions())

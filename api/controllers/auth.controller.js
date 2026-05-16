@@ -7,6 +7,7 @@ import {
   ACCESS_TOKEN_COOKIE,
   getAccessTokenCookieOptions,
 } from "../utils/auth.js";
+import { verifyFirebaseIdToken } from "../utils/firebaseAuth.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -72,11 +73,18 @@ export const signin = async (req, res, next) => {
 
 export const google = async (req, res, next) => {
   try {
-    const email = req.body?.email?.trim().toLowerCase();
-    const name = req.body?.name?.trim();
-    const photo = req.body?.photo?.trim();
-    if (!email || !name || !EMAIL_REGEX.test(email)) {
-      return next(errorHandler(400, "Invalid google sign-in payload"));
+    const firebaseUser = await verifyFirebaseIdToken(req.body?.idToken);
+    const email = String(firebaseUser.email || "").trim().toLowerCase();
+    const name = String(firebaseUser.name || email.split("@")[0]).trim();
+    const photo = String(firebaseUser.picture || "").trim();
+
+    if (
+      !email ||
+      !name ||
+      !EMAIL_REGEX.test(email) ||
+      firebaseUser.email_verified === false
+    ) {
+      return next(errorHandler(401, "Unable to verify Google account"));
     }
 
     const user = await User.findOne({ email });
