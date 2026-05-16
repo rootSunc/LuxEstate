@@ -16,6 +16,10 @@ import { FaEdit, FaHome, FaSignOutAlt, FaTrash } from "react-icons/fa";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { apiRequest } from "../utils/api";
 import { uploadImageFile, validateImageFile } from "../utils/imageUpload";
+import {
+  resolveListingImageUrl,
+  setImageFallback,
+} from "../utils/imageUrl";
 import { getListingPriceLabel } from "../utils/listingFormat";
 
 export default function Profile() {
@@ -333,8 +337,9 @@ export default function Profile() {
             >
               <Link to={`/listing/${listing._id}`}>
                 <img
-                  src={listing.imageUrls[0]}
+                  src={resolveListingImageUrl(listing.imageUrls[0])}
                   alt="listing cover"
+                  onError={setImageFallback}
                   className="h-16 w-16 rounded-md object-cover"
                 />
               </Link>

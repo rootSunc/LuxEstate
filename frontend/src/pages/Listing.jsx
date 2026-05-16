@@ -19,9 +19,11 @@ import {
   getListingPriceLabel,
   getListingTypeLabel,
 } from "../utils/listingFormat";
-
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1600&q=80";
+import {
+  PROPERTY_IMAGE_FALLBACK,
+  resolveListingImageUrl,
+  setImageFallback,
+} from "../utils/imageUrl";
 
 export default function Listing() {
   const [listing, setListing] = useState(null);
@@ -50,7 +52,9 @@ export default function Listing() {
     fetchData();
   }, [params.listingId]);
 
-  const images = listing?.imageUrls?.length ? listing.imageUrls : [FALLBACK_IMAGE];
+  const images = listing?.imageUrls?.length
+    ? listing.imageUrls.map((url) => resolveListingImageUrl(url))
+    : [PROPERTY_IMAGE_FALLBACK];
   const activeImage = images[activeImageIndex] || images[0];
   const isOwner = currentUser && listing?.userRef === currentUser._id;
   const mapUrl = useMemo(() => {
@@ -94,6 +98,7 @@ export default function Listing() {
             <img
               src={activeImage}
               alt={listing.name}
+              onError={setImageFallback}
               className="h-[360px] w-full object-cover sm:h-[560px]"
             />
             <button
@@ -124,6 +129,7 @@ export default function Listing() {
                 <img
                   src={url}
                   alt={`${listing.name} ${index + 1}`}
+                  onError={setImageFallback}
                   className="h-20 w-full object-cover lg:h-[132px]"
                 />
               </button>

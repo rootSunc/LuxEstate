@@ -4,9 +4,10 @@ import { useSelector } from "react-redux";
 import { FaArrowRight, FaBuilding, FaHome, FaKey, FaMapMarkerAlt, FaSearch } from "react-icons/fa";
 import ListingItem from "../components/ListingItem";
 import { apiRequest } from "../utils/api";
-
-const HERO_FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1800&q=85";
+import {
+  PROPERTY_IMAGE_FALLBACK,
+  resolveListingImageUrl,
+} from "../utils/imageUrl";
 
 const CITY_SHORTCUTS = ["San Diego", "Seattle", "Austin", "Los Angeles", "Portland"];
 
@@ -53,7 +54,10 @@ export default function Home() {
     [offerListings, rentListings, saleListings]
   );
   const hasAnyListings = allFeaturedListings.length > 0;
-  const heroImage = offerListings[0]?.imageUrls?.[0] || HERO_FALLBACK_IMAGE;
+  const heroImage = resolveListingImageUrl(
+    offerListings[0]?.imageUrls?.[0],
+    PROPERTY_IMAGE_FALLBACK
+  );
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
